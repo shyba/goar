@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
 	"github.com/hamba/avro"
 	"github.com/linkedin/goavro/v2"
+	"github.com/liteseed/goar/types"
 )
 
 func TagsEncode(tags []types.Tag) []types.Tag {

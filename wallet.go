@@ -4,24 +4,25 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"math/rand"
 	"os"
 	"strconv"
 
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/liteseed/goar/client"
+	"github.com/liteseed/goar/signer"
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/utils"
 )
 
 type Wallet struct {
-	Client *Client
-	Signer *Signer
+	Client *client.Client
+	Signer *signer.Signer
 }
 
 // proxyUrl: option
 func NewWalletFromPath(path string, clientUrl string, proxyUrl ...string) (*Wallet, error) {
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -30,13 +31,13 @@ func NewWalletFromPath(path string, clientUrl string, proxyUrl ...string) (*Wall
 }
 
 func NewWallet(b []byte, clientUrl string, proxyUrl ...string) (w *Wallet, err error) {
-	signer, err := NewSigner(b)
+	signer, err := signer.NewSigner(b)
 	if err != nil {
 		return nil, err
 	}
 
 	w = &Wallet{
-		Client: NewClient(clientUrl, proxyUrl...),
+		Client: client.NewClient(clientUrl, proxyUrl...),
 		Signer: signer,
 	}
 
@@ -186,7 +187,7 @@ func (w *Wallet) SendTransactionConcurrent(ctx context.Context, concurrentNum in
 	return *tx, err
 }
 
-func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error) {
+func (w *Wallet) getUploader(tx *types.Transaction) (*client.TransactionUploader, error) {
 	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return nil, err
@@ -196,7 +197,7 @@ func (w *Wallet) getUploader(tx *types.Transaction) (*TransactionUploader, error
 	if err = w.Signer.SignTx(tx); err != nil {
 		return nil, err
 	}
-	return CreateUploader(w.Client, tx, nil)
+	return client.CreateUploader(w.Client, tx, nil)
 }
 
 func (w *Wallet) SendPst(contractId string, target string, qty *big.Int, customTags []types.Tag, speedFactor int64) (types.Transaction, error) {

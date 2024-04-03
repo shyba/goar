@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/everFinance/goar/types"
+	"github.com/liteseed/goar/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

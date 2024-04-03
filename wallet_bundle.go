@@ -3,8 +3,9 @@ package goar
 import (
 	"context"
 	"errors"
-	"github.com/everFinance/goar/types"
 	"os"
+
+	"github.com/liteseed/goar/types"
 )
 
 func (w *Wallet) SendBundleTxSpeedUp(ctx context.Context, concurrentNum int, bundleBinary interface{}, tags []types.Tag, txSpeed int64) (types.Transaction, error) {

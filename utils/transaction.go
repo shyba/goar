@@ -9,7 +9,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/everFinance/goar/types"
+	"github.com/liteseed/goar/types"
 )
 
 func PrepareChunks(tx *types.Transaction, data interface{}, dataSize int) error {

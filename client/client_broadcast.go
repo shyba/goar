@@ -1,9 +1,9 @@
-package goar
+package client
 
 import (
 	"errors"
 	"fmt"
-	"github.com/everFinance/goar/types"
+	"github.com/liteseed/goar/types"
 )
 
 func (c *Client) BroadcastData(txId string, data []byte, numOfNodes int64, peers ...string) error {

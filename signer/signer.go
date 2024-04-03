@@ -1,13 +1,14 @@
-package goar
+package signer
 
 import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/everFinance/gojwk"
 	"io/ioutil"
+
+	"github.com/everFinance/gojwk"
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/utils"
 )
 
 type Signer struct {

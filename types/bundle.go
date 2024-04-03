@@ -41,12 +41,12 @@ var SigConfigMap = map[int]SigMeta{
 }
 
 type Bundle struct {
-	Items            []BundleItem `json:"items"`
+	Items            []DataItem `json:"items"`
 	BundleBinary     []byte
 	BundleDataReader *os.File
 }
 
-type BundleItem struct {
+type DataItem struct {
 	SignatureType int    `json:"signatureType"`
 	Signature     string `json:"signature"`
 	Owner         string `json:"owner"`  //  utils.Base64Encode(pubkey)
@@ -57,6 +57,6 @@ type BundleItem struct {
 	Id            string `json:"id"`
 	TagsBy        string `json:"tagsBy"` // utils.Base64Encode(TagsBytes) for retry assemble item
 
-	ItemBinary []byte   `json:"-"`
+	RawData    []byte   `json:"-"`
 	DataReader *os.File `json:"-"`
 }

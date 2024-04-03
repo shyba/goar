@@ -3,7 +3,7 @@
 ### Install
 
 ```
-go get github.com/everFinance/goar
+go get github.com/liteseed/goar
 ```
 
 ### Example
@@ -16,8 +16,8 @@ package main
 import (
 	"fmt"
 	"math/big"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar"
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar"
 )
 
 func main() {
@@ -174,7 +174,7 @@ Package for Arweave develop toolkit.
 - [x] AssembleSigShares
 - [x] VerifySigShare
 
-[Threshold Signature Usage Guidelines](https://github.com/everFinance/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
+[Threshold Signature Usage Guidelines](https://github.com/liteseed/goar/wiki/GOAR--RSA-Threshold-Signature-Usage-Guidelines)    
 
 Create RSA Threshold Cryptography:
 

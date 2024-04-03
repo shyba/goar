@@ -1,6 +1,6 @@
 package utils
 
-import "github.com/everFinance/goar/types"
+import "github.com/liteseed/goar/types"
 
 func PstTransferTags(contractId string, target string, qty int64, warp bool) ([]types.Tag, error) {
 	input := types.Input{

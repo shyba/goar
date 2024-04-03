@@ -2,11 +2,14 @@ package goar
 
 import (
 	"encoding/base64"
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"testing"
+
+	"github.com/liteseed/goar/client"
+	"github.com/liteseed/goar/signer"
+	Data "github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
+	"github.com/stretchr/testify/assert"
 )
 
 var testWallet *Wallet
@@ -114,18 +117,6 @@ func Test_SendPstTransfer(t *testing.T) {
 	// t.Log(arTx.ID)
 }
 
-func TestWallet_WarpTransfer(t *testing.T) {
-	warpGateWay := "https://gateway.warp.cc"
-	w, err := NewWalletFromPath("./wallet/account1.json", warpGateWay)
-	assert.NoError(t, err)
-	contractId := "usjm4PCxUd5mtaon7zc97-dt-3qf67yPyqgzLnLqk5A" // vrt
-	target := "Ii5wAMlLNz13n26nYY45mcZErwZLjICmYd46GZvn4ck"
-	qty := int64(2)
-	id, err := w.WarpTransfer(contractId, target, qty)
-	assert.NoError(t, err)
-	t.Log(id)
-}
-
 func TestCreateUploader(t *testing.T) {
 	w, err := NewWalletFromPath("./wallet/account1.json", "https://arweave.net")
 	assert.NoError(t, err)
@@ -144,7 +135,7 @@ func TestCreateUploader(t *testing.T) {
 }
 
 func TestNewWallet(t *testing.T) {
-	cli := NewClient("https://arseed-dev.web3infra.dev")
+	cli := client.NewClient("https://arseed-dev.web3infra.dev")
 	data, err := cli.GetTransactionData("SAk5DdgYiKZTBFIxpVmiOQKsJdVbXr9qj5jTA5ACDmY")
 	assert.NoError(t, err)
 	ioutil.WriteFile("/Users/sandyzhou/Downloads/55555.mp4", data, 0666)
@@ -168,7 +159,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	t.Log(w.Signer.Address)
 	signer01 := w.Signer
 	// sig item01 by ecc signer
-	itemSigner01, err := NewItemSigner(signer01)
+	itemSigner01, err := signer.NewItemSigner(signer01)
 	assert.NoError(t, err)
 	d1, err := ioutil.ReadFile("/Users/sandyzhou/Downloads/1.jpeg")
 	if err != nil {
@@ -291,7 +282,7 @@ func TestTransactionUploader_ConcurrentUploadChunks(t *testing.T) {
 	t.Log("item11", "id", item11.Id)
 
 	// assemble bundle
-	bundle, err := utils.NewBundle(item01, item02, item03, item04, item05, item06, item07, item08, item09, item10, item11)
+	bundle, err := Data.NewBundle(item01, item02, item03, item04, item05, item06, item07, item08, item09, item10, item11)
 	assert.NoError(t, err)
 
 	t.Log(len(bundle.BundleBinary))

@@ -1,10 +1,11 @@
-package goar
+package signer
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSigner(t *testing.T) {

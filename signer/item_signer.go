@@ -1,13 +1,14 @@
-package goar
+package signer
 
 import (
 	"crypto/sha256"
 	"errors"
 	"io"
 
-	"github.com/everFinance/goar/types"
 	"github.com/everFinance/goar/utils"
 	"github.com/everFinance/goether"
+	Data "github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
 )
 
 type ItemSigner struct {
@@ -30,49 +31,49 @@ func NewItemSigner(signer interface{}) (*ItemSigner, error) {
 	}, nil
 }
 
-func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
-	bundleItem, err := utils.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
+func (i *ItemSigner) CreateAndSignItem(data []byte, target string, anchor string, tags []types.Tag) (types.DataItem, error) {
+	bundleItem, err := Data.NewBundleItem(i.owner, i.signType, target, anchor, data, tags)
 	if err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	// sign
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	// get itemBinary
-	itemBinary, err := utils.GenerateItemBinary(bundleItem)
+	itemBinary, err := Data.GenerateItemBinary(bundleItem)
 	if err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
-	bundleItem.ItemBinary = itemBinary
+	bundleItem.RawData = itemBinary
 	return *bundleItem, nil
 }
 
-func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags []types.Tag, items ...types.BundleItem) (types.BundleItem, error) {
+func (i *ItemSigner) CreateAndSignNestedItem(target string, anchor string, tags []types.Tag, items ...types.DataItem) (types.DataItem, error) {
 	bundleTags := []types.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
 		{Name: "Bundle-Version", Value: "2.0.0"},
 	}
 	tags = append(tags, bundleTags...)
 
-	bundle, err := utils.NewBundle(items...)
+	bundle, err := Data.NewBundle(items...)
 	if err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	return i.CreateAndSignItem(bundle.BundleBinary, target, anchor, tags)
 }
 
-func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.BundleItem, error) {
-	bundleItem, err := utils.NewBundleItemStream(i.owner, i.signType, target, anchor, data, tags)
+func (i *ItemSigner) CreateAndSignItemStream(data io.Reader, target string, anchor string, tags []types.Tag) (types.DataItem, error) {
+	bundleItem, err := Data.NewBundleItemStream(i.owner, i.signType, target, anchor, data, tags)
 	if err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	// sign
 	if err := SignBundleItem(i.signType, i.signer, bundleItem); err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	if _, err := bundleItem.DataReader.Seek(0, 0); err != nil {
-		return types.BundleItem{}, err
+		return types.DataItem{}, err
 	}
 	return *bundleItem, nil
 }
@@ -94,8 +95,8 @@ func reflectSigner(signer interface{}) (signType int, signerAddr, owner string, 
 	return
 }
 
-func SignBundleItem(signatureType int, signer interface{}, item *types.BundleItem) error {
-	signMsg, err := utils.BundleItemSignData(*item)
+func SignBundleItem(signatureType int, signer interface{}, item *types.DataItem) error {
+	signMsg, err := Data.BundleItemSignData(*item)
 	if err != nil {
 		return err
 	}

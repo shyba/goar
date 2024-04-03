@@ -1,13 +1,15 @@
-package goar
+package client
 
 import (
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"testing"
+
+	Data "github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 // func TestGetTransactionByID(t *testing.T) {
@@ -336,7 +338,7 @@ func TestClient_ExistTxData(t *testing.T) {
 func TestNewTempConn2(t *testing.T) {
 	data, err := os.Open("/Users/sandyzhou/Downloads/zHZIquAcF8eyYb6SbYUtzu1JJ_oeVCMJvqV7Sy-LP4k")
 	assert.NoError(t, err)
-	item, err := utils.DecodeBundleItemStream(data)
+	item, err := Data.DecodeBundleItemStream(data)
 	assert.NoError(t, err)
 	// 0x03641046696c654e616d6520576563686174494d4738302e6a70656718436f6e74656e742d5479706514696d6167652f6a70656700
 
@@ -347,7 +349,7 @@ func TestNewTempConn2(t *testing.T) {
 
 	t.Log(item.Tags) // [{FileName WechatIMG80.jpeg} {Content-Type image/jpeg}]
 
-	err = utils.VerifyBundleItem(*item)
+	err = Data.VerifyBundleItem(*item)
 	assert.NoError(t, err)
 }
 
@@ -404,7 +406,7 @@ func TestNewClient2(t *testing.T) {
 
 	assert.NoError(t, err)
 	// data bundle binary
-	bundle, err := utils.DecodeBundle(data)
+	bundle, err := Data.DecodeBundle(data)
 	assert.NoError(t, err)
 
 	bundleItems := bundle.Items
@@ -459,7 +461,7 @@ func TestNewWallet2(t *testing.T) {
 				offset += int64(len(chunk))
 			}
 			itemData := data[startChunkOffset : startChunkOffset+itemBinaryLength]
-			item, err := utils.DecodeBundleItem(itemData)
+			item, err := Data.DecodeBundleItem(itemData)
 			assert.NoError(t, err)
 			dd, _ := utils.Base64Decode(item.Data)
 			t.Log(string(dd))

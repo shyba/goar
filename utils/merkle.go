@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"os"
 
-	"github.com/everFinance/goar/types"
+	"github.com/liteseed/goar/types"
 	"github.com/shopspring/decimal"
 )
 

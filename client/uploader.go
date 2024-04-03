@@ -1,4 +1,4 @@
-package goar
+package client
 
 import (
 	"context"
@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/everFinance/goar/types"
-	"github.com/everFinance/goar/utils"
+	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/utils"
 	"github.com/shopspring/decimal"
 )
 

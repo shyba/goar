@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
-	"github.com/everFinance/goar/types"
+	"github.com/liteseed/goar/types"
 	"github.com/stretchr/testify/assert"
 )
 
