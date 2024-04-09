@@ -68,7 +68,7 @@ type Transaction struct {
 	Tags      []Tag  `json:"tags"`
 	Target    string `json:"target"`
 	Quantity  string `json:"quantity"`
-	Data      []byte `json:"data"`
+	Data      string `json:"data"`
 	Reward    string `json:"reward"`
 	Signature string `json:"signature"`
 	DataSize  string `json:"data_size"`
@@ -77,16 +77,21 @@ type Transaction struct {
 	Chunks Chunks
 }
 
+type Proof struct {
+	Offset int
+	Proof  []byte
+}
+
 type Chunk struct {
-  DataHash []byte `json:"data_hash"`
-  MinByteRange int `json:"min_byte_range"`
-  MaxByteRange int `json:"max_byte_range"`
+	DataHash     []byte `json:"data_hash"`
+	MinByteRange int    `json:"min_byte_range"`
+	MaxByteRange int    `json:"max_byte_range"`
 }
 
 type Chunks struct {
-	DataRoot string `json:"data_root"`
-	DataSize string `json:"data_size"`
-	DataPath string `json:"data_path"`
-	Offset   string `json:"offset"`
-	Chunks   []Chunk `json:"chunks"`
+	DataRoot string  `json:"data_root"`
+	DataSize string  `json:"data_size"`
+	DataPath string  `json:"data_path"`
+	Offset   string  `json:"offset"`
+	Chunks   string `json:"chunks"`
 }

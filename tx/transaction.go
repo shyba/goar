@@ -1,34 +1,62 @@
 package tx
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/liteseed/goar/crypto"
 )
 
-func GetTransactionChunks(t *Transaction) ([]byte, error) {
-	switch t.Format {
-	case 2:
-		err := t.PrepareChunks(t.Data)
-		if err != nil {
-			return nil, err
-		}
-		tags := [][]string{}
-		for _, tag := range t.Tags {
-			tags = append(tags, []string{
-				tag.Name, tag.Value,
-			})
-		}
-
-		chunks := []any{}
-
-		signatureData := crypto.DeepHash(chunks)
-		deepHash := signatureData[:]
-		return deepHash, nil
-
-	default:
-		return nil, fmt.Errorf("unexpected transaction format: %d", t.Format)
+func GetTransactionDeepHash(t *Transaction) ([]byte, error) {
+	if t.Format != 2 {
+		return nil, errors.New("only type 2 transaction supported")
 	}
+	rawOwner, err := crypto.Base64Decode(t.Owner)
+	if err != nil {
+		return nil, err
+	}
+	rawTarget, err := crypto.Base64Decode(t.Target)
+	if err != nil {
+		return nil, err
+	}
+
+	rawTags, err := DecodeTags(t.Tags)
+	if err != nil {
+		return nil, err
+	}
+	rawData, err := crypto.Base64Decode(t.Data)
+	if err != nil {
+		return nil, err
+	}
+	rawLastTx, err := crypto.Base64Decode(t.LastTx)
+	if err != nil {
+		return nil, err
+	}
+	err = t.PrepareChunks(rawData)
+	if err != nil {
+		return nil, err
+	}
+
+	rawDataRoot, err := crypto.Base64Decode(t.DataRoot)
+	if err != nil {
+		return nil, err
+	}
+
+	chunks := []any{
+		"2",
+		rawOwner,
+		rawTarget,
+		rawData,
+		[]byte(t.Quantity),
+		[]byte(t.Reward),
+		rawLastTx,
+		rawTags,
+		[]byte(t.DataSize),
+		rawDataRoot,
+	}
+	signatureData := crypto.DeepHash(chunks)
+	deepHash := signatureData[:]
+	return deepHash, nil
+
 }
 
 // Note: we *do not* use `t.Data`, the caller may be
@@ -37,5 +65,10 @@ func GetTransactionChunks(t *Transaction) ([]byte, error) {
 // assigns the result to this transaction. It should not read the
 // data *from* this transaction.
 func (t *Transaction) PrepareChunks(data []byte) error {
+	if len(data) > 0 {
+		t.Chunks = generateTransactionChunks(data)
+		t.DataRoot = crypto.Base64Encode([]byte(t.Chunks.DataRoot))
+	}
+
 	return nil
 }

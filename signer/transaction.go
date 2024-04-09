@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Signer) SignTransaction(t *tx.Transaction) error {
-	signatureData, err := tx.GetTransactionChunks(t)
+	signatureData, err := tx.GetTransactionDeepHash(t)
 	if err != nil {
 		return err
 	}
