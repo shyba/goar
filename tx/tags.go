@@ -38,7 +38,7 @@ func decodeAvro(data []byte) ([]Tag, error) {
 
 	tags := []Tag{}
 
-	for _, v := range avroTags.([]interface{}) {
+	for _, v := range avroTags.([]any) {
 		tag := v.(map[string]any)
 		tags = append(tags, Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
 	}

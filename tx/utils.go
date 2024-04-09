@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"reflect"
 )
 
 func getTarget(data *[]byte, position int) (string, int) {
@@ -64,17 +63,4 @@ func decodeBundleHeader(data *[]byte) (*[]BundleHeader, int) {
 		headers = append(headers, BundleHeader{id: id, size: size})
 	}
 	return &headers, N
-}
-
-func typeof(v interface{}) string {
-	return reflect.TypeOf(v).String()
-}
-
-func unpackArray(s any) []any {
-	v := reflect.ValueOf(s)
-	r := make([]any, v.Len())
-	for i := 0; i < v.Len(); i++ {
-		r[i] = v.Index(i).Interface()
-	}
-	return r
 }
