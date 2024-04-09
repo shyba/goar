@@ -4,23 +4,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/panjf2000/ants/v2"
+	"log"
 	"math"
 	"math/rand"
-	"os"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/liteseed/goar/types"
-	"github.com/liteseed/goar/utils"
+	"github.com/liteseed/goar/tx"
+	"github.com/panjf2000/ants/v2"
 	"github.com/shopspring/decimal"
 )
 
 type SerializedUploader struct {
 	chunkIndex         int
 	txPosted           bool
-	transaction        *types.Transaction
+	transaction        *tx.Transaction
 	lastRequestTimeEnd int64
 	lastResponseStatus int
 	lastResponseError  string
@@ -30,53 +29,42 @@ type TransactionUploader struct {
 	Client             *Client `json:"-"`
 	ChunkIndex         int
 	TxPosted           bool
-	Transaction        *types.Transaction
+	Transaction        *tx.Transaction
 	Data               []byte
-	DataReader         *os.File
 	LastRequestTimeEnd int64
 	TotalErrors        int // Not serialized.
 	LastResponseStatus int
 	LastResponseError  string
 }
 
-func newUploader(tt *types.Transaction, client *Client) (*TransactionUploader, error) {
-	if tt.ID == "" {
+func newUploader(t *tx.Transaction, client *Client) (*TransactionUploader, error) {
+	if t.ID == "" {
 		return nil, errors.New("Transaction is not signed.")
 	}
-	if tt.Chunks == nil {
-		log.Warn("Transaction chunks not perpared")
+	if t.Chunks == nil {
+		log.Println("Transaction chunks not prepared")
 	}
 	// Make a copy of Transaction, zeroing the Data so we can serialize.
-	tu := &TransactionUploader{
+	u := &TransactionUploader{
 		Client: client,
 	}
-	// empty data is fine
-	da, err := utils.Base64Decode(tt.Data)
-	if err != nil {
-		log.Error("utils.Base64Decode(tt.Data)", "err", err)
-		return nil, err
 
+	u.Transaction = &tx.Transaction{
+		Format:    t.Format,
+		ID:        t.ID,
+		LastTx:    t.LastTx,
+		Owner:     t.Owner,
+		Tags:      t.Tags,
+		Target:    t.Target,
+		Quantity:  t.Quantity,
+		Data:      t.Data,
+		DataSize:  t.DataSize,
+		DataRoot:  t.DataRoot,
+		Reward:    t.Reward,
+		Signature: t.Signature,
+		Chunks:    t.Chunks,
 	}
-	tu.Data = da
-	if tt.DataReader != nil {
-		tu.DataReader = tt.DataReader
-	}
-	tu.Transaction = &types.Transaction{
-		Format:    tt.Format,
-		ID:        tt.ID,
-		LastTx:    tt.LastTx,
-		Owner:     tt.Owner,
-		Tags:      tt.Tags,
-		Target:    tt.Target,
-		Quantity:  tt.Quantity,
-		Data:      "",
-		DataSize:  tt.DataSize,
-		DataRoot:  tt.DataRoot,
-		Reward:    tt.Reward,
-		Signature: tt.Signature,
-		Chunks:    tt.Chunks,
-	}
-	return tu, nil
+	return u, nil
 }
 
 // CreateUploader
@@ -88,7 +76,7 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 		err      error
 	)
 
-	if tt, ok := upload.(*types.Transaction); ok {
+	if tt, ok := upload.(*tx.Transaction); ok {
 		uploader, err = newUploader(tt, api)
 		if err != nil {
 			return nil, err
@@ -100,7 +88,7 @@ func CreateUploader(api *Client, upload interface{}, data []byte) (*TransactionU
 		// upload 返回为 SerializedUploader 类型
 		upload, err = (&TransactionUploader{Client: api}).FromTransactionId(id)
 		if err != nil {
-			log.Error("(&TransactionUploader{Client: api}).FromTransactionId(id)", "err", err)
+			log.Println("(&TransactionUploader{Client: api}).FromTransactionId(id)", "err", err)
 			return nil, err
 		}
 	} else {
@@ -169,7 +157,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 
 	var wg sync.WaitGroup
 	if concurrentNum <= 0 {
-		concurrentNum = types.DEFAULT_CHUNK_CONCURRENT_NUM
+		concurrentNum = tx.DEFAULT_CHUNK_CONCURRENT_NUM
 	}
 	p, _ := ants.NewPoolWithFunc(concurrentNum, func(i interface{}) {
 		defer wg.Done()
@@ -178,19 +166,19 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 
 		select {
 		case <-ctx.Done():
-			log.Warn("ctx.done", "chunkIdx", idx)
+			log.Println("ctx.done", "chunkIdx", idx)
 			return
 		default:
 		}
-		var chunk *types.GetChunk
+		var chunk *tx.GetChunk
 		var err error
 		if tt.DataReader != nil {
-			chunk, err = utils.GetChunkStream(*tt.Transaction, idx, tt.DataReader)
+			chunk, err = internal.GetChunkStream(*tt.Transaction, idx, tt.DataReader)
 		} else {
-			chunk, err = utils.GetChunk(*tt.Transaction, idx, tt.Data)
+			chunk, err = internal.GetChunk(*tt.Transaction, idx, tt.Data)
 		}
 		if err != nil {
-			log.Error("GetChunk error", "err", err, "idx", idx)
+			log.Println("GetChunk error", "err", err, "idx", idx)
 			return
 		}
 		body, statusCode, err := tt.Client.SubmitChunks(chunk) // always body is errMsg
@@ -198,13 +186,13 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 			return
 		}
 
-		log.Error("concurrent submitChunk failed", "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
+		log.Println("concurrent submitChunk failed", "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
 		// try again
 		retryCount := 0
 		for {
 			select {
 			case <-ctx.Done():
-				log.Warn("ctx.done", "chunkIdx", idx)
+				log.Println("ctx.done", "chunkIdx", idx)
 				return
 			default:
 			}
@@ -220,7 +208,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 			if statusCode == 200 {
 				return
 			}
-			log.Warn("retry submitChunk failed", "retryCount", retryCount, "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
+			log.Println("retry submitChunk failed", "retryCount", retryCount, "chunkIdx", idx, "statusCode", statusCode, "gatewayErr", body, "httpErr", err)
 		}
 	})
 
@@ -228,7 +216,7 @@ func (tt *TransactionUploader) ConcurrentOnce(ctx context.Context, concurrentNum
 	for i := 0; i < len(tt.Transaction.Chunks.Chunks); i++ {
 		wg.Add(1)
 		if err := p.Invoke(i); err != nil {
-			log.Error("p.Invoke(i)", "err", err, "i", i)
+			log.Println("p.Invoke(i)", "err", err, "i", i)
 			return err
 		}
 	}
@@ -267,7 +255,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 
 	var delay = 0.0
 	if tt.LastResponseError != "" {
-		delay = math.Max(float64(tt.LastRequestTimeEnd+types.ERROR_DELAY-time.Now().UnixNano()/1000000), float64(types.ERROR_DELAY))
+		delay = math.Max(float64(tt.LastRequestTimeEnd+tx.ERROR_DELAY-time.Now().UnixNano()/1000000), float64(tx.ERROR_DELAY))
 	}
 	if delay > 0.0 {
 		// Jitter delay bcoz networks, subtract up to 30% from 40 seconds
@@ -281,17 +269,17 @@ func (tt *TransactionUploader) UploadChunk() error {
 		return tt.postTransaction()
 	}
 
-	var chunk *types.GetChunk
+	var chunk *tx.GetChunk
 	var err error
 	if tt.DataReader != nil {
-		chunk, err = utils.GetChunkStream(*tt.Transaction, tt.ChunkIndex, tt.DataReader)
+		chunk, err = internal.GetChunkStream(*tt.Transaction, tt.ChunkIndex, tt.DataReader)
 	} else {
-		chunk, err = utils.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
+		chunk, err = internal.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
 	}
 	if err != nil {
 		return err
 	}
-	path, err := utils.Base64Decode(chunk.DataPath)
+	path, err := internal.Base64Decode(chunk.DataPath)
 	if err != nil {
 		return err
 	}
@@ -303,16 +291,16 @@ func (tt *TransactionUploader) UploadChunk() error {
 	if err != nil {
 		return err
 	}
-	_, chunkOk := utils.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
+	_, chunkOk := internal.ValidatePath(tt.Transaction.Chunks.DataRoot, offset, 0, dataSize, path)
 	if !chunkOk {
 		return errors.New(fmt.Sprintf("Unable to validate chunk %d ", tt.ChunkIndex))
 	}
 	// Catch network errors and turn them into objects with status -1 and an error message.
-	var gc *types.GetChunk
+	var gc *tx.GetChunk
 	if tt.DataReader != nil {
-		gc, err = utils.GetChunkStream(*tt.Transaction, tt.ChunkIndex, tt.DataReader)
+		gc, err = internal.GetChunkStream(*tt.Transaction, tt.ChunkIndex, tt.DataReader)
 	} else {
-		gc, err = utils.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
+		gc, err = internal.GetChunk(*tt.Transaction, tt.ChunkIndex, tt.Data)
 	}
 	if err != nil {
 		return err
@@ -325,7 +313,7 @@ func (tt *TransactionUploader) UploadChunk() error {
 	} else {
 		errStr := fmt.Sprintf("%s,%v,%d", body, err, statusCode)
 		tt.LastResponseError = errStr
-		if _, ok := types.FATAL_CHUNK_UPLOAD_ERRORS[body]; ok {
+		if _, ok := tx.FATAL_CHUNK_UPLOAD_ERRORS[body]; ok {
 			return errors.New(fmt.Sprintf("Fatal error uploading chunk %d:%v", tt.ChunkIndex, body))
 		}
 	}
@@ -358,7 +346,7 @@ func (tt *TransactionUploader) FromSerialized(serialized *SerializedUploader, da
 	upload.TxPosted = serialized.txPosted
 	upload.Data = data
 
-	err = utils.PrepareChunks(upload.Transaction, data, len(data))
+	err = internal.PrepareChunks(upload.Transaction, data, len(data))
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +371,7 @@ func (tt *TransactionUploader) FromTransactionId(id string) (*SerializedUploader
 		return nil, errors.New(fmt.Sprintf("Tx %s not found; error: %v", id, err))
 	}
 	transaction := tx
-	transaction.Data = ""
+	transaction.Data  = nil
 
 	serialized := &SerializedUploader{
 		chunkIndex:         0,
@@ -410,7 +398,7 @@ func (tt *TransactionUploader) FormatSerializedUploader() *SerializedUploader {
 
 // POST to /tx
 func (tt *TransactionUploader) postTransaction() error {
-	var uploadInBody = tt.TotalChunks() <= types.MAX_CHUNKS_IN_BODY
+	var uploadInBody = tt.TotalChunks() <= tx.MAX_CHUNKS_IN_BODY
 	return tt.uploadTx(uploadInBody)
 }
 
@@ -438,7 +426,7 @@ func (tt *TransactionUploader) uploadTx(withBody bool) error {
 		tt.TxPosted = true
 		// if withBody {
 		// 	// We are complete.
-		// 	tt.ChunkIndex = types.MAX_CHUNKS_IN_BODY
+		// 	tt.ChunkIndex = tx.MAX_CHUNKS_IN_BODY
 		// }
 		return nil
 	}

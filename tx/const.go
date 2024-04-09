@@ -1,4 +1,4 @@
-package types
+package tx
 
 import "math/big"
 
@@ -46,9 +46,3 @@ var FATAL_CHUNK_UPLOAD_ERRORS = map[string]struct{}{
 	"{\"error\":\"chunk_proof_ratio_not_attractive\"}": struct{}{},
 	"{\"error\":\"invalid_proof\"}":                    struct{}{},
 }
-
-// about bundle
-const (
-	BUNDLER_HOST           = "https://node1.bundlr.network"
-	MIN_BUNDLE_BINARY_SIZE = 1044
-)

@@ -3,13 +3,12 @@ package goar
 import (
 	"context"
 	"errors"
-	"os"
 
-	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/tx"
 )
 
-func (w *Wallet) SendBundleTxSpeedUp(ctx context.Context, concurrentNum int, bundleBinary interface{}, tags []types.Tag, txSpeed int64) (types.Transaction, error) {
-	bundleTags := []types.Tag{
+func (w *Wallet) SendBundleTxSpeedUp(ctx context.Context, concurrentNum int, bundleBinary interface{}, tags []tx.Tag, txSpeed int64) (tx.Transaction, error) {
+	bundleTags := []tx.Tag{
 		{Name: "Bundle-Format", Value: "binary"},
 		{Name: "Bundle-Version", Value: "2.0.0"},
 	}
@@ -20,19 +19,15 @@ func (w *Wallet) SendBundleTxSpeedUp(ctx context.Context, concurrentNum int, bun
 	}
 	for _, tag := range tags {
 		if _, ok := mmap[tag.Name]; ok {
-			return types.Transaction{}, errors.New("tags can not set bundleTags")
+			return tx.Transaction{}, errors.New("tags can not set bundleTags")
 		}
 	}
 
-	txTags := make([]types.Tag, 0)
+	txTags := make([]tx.Tag, 0)
 	txTags = append(bundleTags, tags...)
 	return w.SendDataConcurrentSpeedUp(ctx, concurrentNum, bundleBinary, txTags, txSpeed)
 }
 
-func (w *Wallet) SendBundleTx(ctx context.Context, concurrentNum int, bundleBinary []byte, tags []types.Tag) (types.Transaction, error) {
+func (w *Wallet) SendBundleTx(ctx context.Context, concurrentNum int, bundleBinary []byte, tags []tx.Tag) (tx.Transaction, error) {
 	return w.SendBundleTxSpeedUp(ctx, concurrentNum, bundleBinary, tags, 0)
-}
-
-func (w *Wallet) SendBundleTxStream(ctx context.Context, concurrentNum int, bundleReader *os.File, tags []types.Tag) (types.Transaction, error) {
-	return w.SendBundleTxSpeedUp(ctx, concurrentNum, bundleReader, tags, 0)
 }

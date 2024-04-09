@@ -4,77 +4,68 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/everFinance/gojwk"
-	"github.com/liteseed/goar/types"
-	"github.com/liteseed/goar/utils"
+	"github.com/liteseed/goar/crypto"
 )
 
 type Signer struct {
-	Address string
-	PubKey  *rsa.PublicKey
-	PrvKey  *rsa.PrivateKey
+	Address    string
+	PublicKey  *rsa.PublicKey
+	PrivateKey *rsa.PrivateKey
 }
 
-func NewSignerFromPath(path string) (*Signer, error) {
-	b, err := ioutil.ReadFile(path)
+func FromPath(path string) (*Signer, error) {
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	return NewSigner(b)
+	return New(b)
 }
 
-func NewSigner(b []byte) (*Signer, error) {
+func New(b []byte) (*Signer, error) {
 	key, err := gojwk.Unmarshal(b)
 	if err != nil {
 		return nil, err
 	}
-	pubKey, err := key.DecodePublicKey()
+	rsaPublicKey, err := key.DecodePublicKey()
 	if err != nil {
 		return nil, err
 	}
-	pub, ok := pubKey.(*rsa.PublicKey)
+	publicKey, ok := rsaPublicKey.(*rsa.PublicKey)
 	if !ok {
 		err = fmt.Errorf("pubKey type error")
 		return nil, err
 	}
 
-	prvKey, err := key.DecodePrivateKey()
+	rsaPrivateKey, err := key.DecodePrivateKey()
 	if err != nil {
 		return nil, err
 	}
-	prv, ok := prvKey.(*rsa.PrivateKey)
+	privateKey, ok := rsaPrivateKey.(*rsa.PrivateKey)
 	if !ok {
 		err = fmt.Errorf("prvKey type error")
 		return nil, err
 	}
-	addr := sha256.Sum256(pub.N.Bytes())
+	addr := sha256.Sum256(publicKey.N.Bytes())
 	return &Signer{
-		Address: utils.Base64Encode(addr[:]),
-		PubKey:  pub,
-		PrvKey:  prv,
+		Address:    crypto.Base64Encode(addr[:]),
+		PublicKey:  publicKey,
+		PrivateKey: privateKey,
 	}, nil
 }
 
-func NewSignerByPrivateKey(privateKey *rsa.PrivateKey) *Signer {
+func FromPrivateKey(privateKey *rsa.PrivateKey) *Signer {
 	pub := &privateKey.PublicKey
 	addr := sha256.Sum256(pub.N.Bytes())
 	return &Signer{
-		Address: utils.Base64Encode(addr[:]),
-		PubKey:  pub,
-		PrvKey:  privateKey,
+		Address:    crypto.Base64Encode(addr[:]),
+		PublicKey:  pub,
+		PrivateKey: privateKey,
 	}
 }
 
-func (s *Signer) SignTx(tx *types.Transaction) error {
-	return utils.SignTransaction(tx, s.PrvKey)
-}
-
 func (s *Signer) Owner() string {
-	return utils.Base64Encode(s.PubKey.N.Bytes())
-}
-
-func (s *Signer) SignMsg(msg []byte) ([]byte, error) {
-	return utils.Sign(msg, s.PrvKey)
+	return crypto.Base64Encode(s.PublicKey.N.Bytes())
 }
