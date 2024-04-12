@@ -64,3 +64,9 @@ func decodeBundleHeader(data *[]byte) (*[]BundleHeader, int) {
 	}
 	return &headers, N
 }
+
+func encodeUint(x uint64) []byte {
+	buf := make([]byte, 8)
+	binary.LittleEndian.PutUint64(buf, x)
+	return buf
+}

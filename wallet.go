@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/liteseed/goar/client"
+	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/tx"
 )
@@ -57,7 +58,7 @@ func (w *Wallet) SendDataSpeedUp(data []byte, tags []tx.Tag, speedFactor int64) 
 		Target:   "",
 		Quantity: "0",
 		Tags:     tags,
-		Data:     data,
+		Data:     crypto.Base64Encode(data),
 		DataSize: fmt.Sprintf("%d", len(data)),
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
@@ -92,7 +93,7 @@ func (w *Wallet) SendDataConcurrentSpeedUp(ctx context.Context, concurrentNum in
 		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
 	}
 
-	tx.Data = data.([]byte)
+	tx.Data = data
 
 	return w.SendTransactionConcurrent(ctx, concurrentNum, tx)
 }

@@ -66,9 +66,12 @@ func GetTransactionDeepHash(t *Transaction) ([]byte, error) {
 // data *from* this transaction.
 func (t *Transaction) PrepareChunks(data []byte) error {
 	if len(data) > 0 {
-		t.Chunks = generateTransactionChunks(data)
-		t.DataRoot = crypto.Base64Encode([]byte(t.Chunks.DataRoot))
+		chunks, err := generateTransactionChunks(data)
+		if err != nil {
+			return err
+		}
+		t.Chunks = *chunks
+		t.DataRoot = (*chunks).DataRoot
 	}
-
 	return nil
 }

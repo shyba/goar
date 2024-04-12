@@ -1,8 +1,8 @@
 # goar
 
-### Install
+## Install
 
-```
+```zsh
 go get github.com/liteseed/goar
 ```
 
@@ -10,30 +10,30 @@ go get github.com/liteseed/goar
 
 #### Send AR or Winston
 
-```golang
+```go
 package main
 
 import (
-	"fmt"
-	"math/big"
-	"github.com/liteseed/goar/types"
-	"github.com/liteseed/goar"
+ "fmt"
+ "math/big"
+ "github.com/liteseed/goar/types"
+ "github.com/liteseed/goar"
 )
 
 func main() {
-	wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
-	if err != nil {
-		panic(err)
-	}
+ wallet, err := goar.NewWalletFromPath("./test-keyfile.json", "https://arweave.net")
+ if err != nil {
+  panic(err)
+ }
 
-	tx, err := wallet.SendAR(
+ tx, err := wallet.SendAR(
   //id, err := wallet.SendWinston( 
-		big.NewFloat(1.0), // AR amount
-		{{target}}, // target address
-		[]types.Tag{},
-	)
+  big.NewFloat(1.0), // AR amount
+  {{target}}, // target address
+  []types.Tag{},
+ )
 
-	fmt.Println(tx.ID, err)
+ fmt.Println(tx.ID, err)
 }
 
 ```
