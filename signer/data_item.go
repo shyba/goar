@@ -5,9 +5,10 @@ import (
 
 	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
 )
 
-func (s *Signer) SignDataItem(dataItem *tx.DataItem) error {
+func (s *Signer) SignDataItem(dataItem *types.DataItem) error {
 	deepHashChunk, err := tx.GetDataItemChunk(s.Owner(), dataItem.Target, dataItem.Anchor, dataItem.Tags, dataItem.Data)
 	if err != nil {
 		return err

@@ -1,11 +1,10 @@
-package tx
+package types
 
 import (
 	"encoding/binary"
 	"errors"
 
 	"github.com/linkedin/goavro/v2"
-	"github.com/liteseed/goar/types"
 )
 
 const avroTagSchema = `
@@ -21,7 +20,12 @@ const avroTagSchema = `
 	}
 }`
 
-func decodeAvro(data []byte) ([]types.Tag, error) {
+type Tag struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+func decodeAvro(data []byte) ([]Tag, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -32,16 +36,16 @@ func decodeAvro(data []byte) ([]types.Tag, error) {
 		return nil, err
 	}
 
-	tags := []types.Tag{}
+	tags := []Tag{}
 
 	for _, v := range avroTags.([]any) {
 		tag := v.(map[string]any)
-		tags = append(tags, types.Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
+		tags = append(tags, Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
 	}
 	return tags, err
 }
 
-func encodeAvro(tags []types.Tag) ([]byte, error) {
+func encodeAvro(tags []Tag) ([]byte, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -60,7 +64,7 @@ func encodeAvro(tags []types.Tag) ([]byte, error) {
 	return data, err
 }
 
-func DecodeTags(tags []types.Tag) ([]byte, error) {
+func DecodeTags(tags []Tag) ([]byte, error) {
 	if len(tags) > 0 {
 		data, err := encodeAvro(tags)
 		if err != nil {
@@ -72,8 +76,8 @@ func DecodeTags(tags []types.Tag) ([]byte, error) {
 	return nil, nil
 }
 
-func EncodeTags(data []byte, startAt int) ([]types.Tag, int, error) {
-	tags := []types.Tag{}
+func EncodeTags(data []byte, startAt int) ([]Tag, int, error) {
+	tags := []Tag{}
 	tagsEnd := startAt + 8 + 8
 	numberOfTags := int(binary.LittleEndian.Uint16(data[startAt : startAt+8]))
 	numberOfTagBytesStart := startAt + 8

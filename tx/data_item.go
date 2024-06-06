@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
+	"github.com/liteseed/goar/types"
 )
 
 const (
@@ -12,8 +13,8 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
-func NewDataItem(rawData []byte, target string, anchor string, tags []Tag) (*DataItem, error) {
-	return &DataItem{
+func NewDataItem(rawData []byte, target string, anchor string, tags []types.Tag) (*types.DataItem, error) {
+	return &types.DataItem{
 		Target: target,
 		Anchor: anchor,
 		Tags:   tags,
@@ -22,7 +23,7 @@ func NewDataItem(rawData []byte, target string, anchor string, tags []Tag) (*Dat
 }
 
 // Decode a DataItem from bytes
-func DecodeDataItem(raw []byte) (*DataItem, error) {
+func DecodeDataItem(raw []byte) (*types.DataItem, error) {
 	N := len(raw)
 	if N < 2 {
 		return nil, errors.New("binary too small")
@@ -54,7 +55,7 @@ func DecodeDataItem(raw []byte) (*DataItem, error) {
 	}
 	data := crypto.Base64Encode(raw[position:])
 
-	return &DataItem{
+	return &types.DataItem{
 		ID:            id,
 		SignatureType: signatureType,
 		Signature:     signature,
@@ -67,7 +68,7 @@ func DecodeDataItem(raw []byte) (*DataItem, error) {
 	}, nil
 }
 
-func VerifyDataItem(dataItem *DataItem) error {
+func VerifyDataItem(dataItem *types.DataItem) error {
 	// Verify ID
 	rawSignature, err := crypto.Base64Decode(dataItem.Signature)
 	if err != nil {
@@ -112,7 +113,7 @@ func VerifyDataItem(dataItem *DataItem) error {
 	return nil
 }
 
-func GetDataItemChunk(owner string, target string, anchor string, tags []Tag, data string) ([]byte, error) {
+func GetDataItemChunk(owner string, target string, anchor string, tags []types.Tag, data string) ([]byte, error) {
 	rawOwner, err := crypto.Base64Decode(owner)
 	if err != nil {
 		return nil, err

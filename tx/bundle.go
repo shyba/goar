@@ -4,22 +4,23 @@ import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
+	"github.com/liteseed/goar/types"
 )
 
-func DecodeBundle(data []byte) (*Bundle, error) {
+func DecodeBundle(data []byte) (*types.Bundle, error) {
 	// length must more than 32
 	if len(data) < 32 {
 		return nil, errors.New("binary length must more than 32")
 	}
 	headers, N := decodeBundleHeader(&data)
-	bundle := &Bundle{
-		Items:   make([]DataItem, N),
+	bundle := &types.Bundle{
+		Items:   make([]types.DataItem, N),
 		RawData: crypto.Base64Encode(data),
 	}
 	bundleStart := 32 + 64*N
 	for i := 0; i < N; i++ {
 		header := (*headers)[i]
-		bundleEnd := bundleStart + header.size
+		bundleEnd := bundleStart + header.Size
 		dataItem, err := DecodeDataItem(data[bundleStart:bundleEnd])
 		if err != nil {
 			return nil, err
@@ -30,8 +31,8 @@ func DecodeBundle(data []byte) (*Bundle, error) {
 	return bundle, nil
 }
 
-func NewBundle(dataItems *[]DataItem) (*Bundle, error) {
-	bundle := &Bundle{}
+func NewBundle(dataItems *[]types.DataItem) (*types.Bundle, error) {
+	bundle := &types.Bundle{}
 
 	headers, err := generateBundleHeader(dataItems)
 	if err != nil {
@@ -47,8 +48,8 @@ func NewBundle(dataItems *[]DataItem) (*Bundle, error) {
 	var dataItemsBytes []byte
 
 	for i := 0; i < N; i++ {
-		headersBytes = append(headersBytes, (*headers)[i].raw...)
-		dataItemsBytes = append(dataItemsBytes, (*headers)[i].raw...)
+		headersBytes = append(headersBytes, (*headers)[i].Raw...)
+		dataItemsBytes = append(dataItemsBytes, (*headers)[i].Raw...)
 	}
 
 	bundle.RawData = crypto.Base64Encode(append(sizeBytes, append(headersBytes, dataItemsBytes...)...))
@@ -63,7 +64,7 @@ func ValidateBundle(data []byte) (bool, error) {
 	headers, N := decodeBundleHeader(&data)
 	dataItemSize := 0
 	for i := 0; i < N; i++ {
-		dataItemSize += (*headers)[i].size
+		dataItemSize += (*headers)[i].Size
 	}
 	return len(data) == dataItemSize+32+64*N, nil
 }

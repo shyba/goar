@@ -4,9 +4,10 @@ import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
+	"github.com/liteseed/goar/types"
 )
 
-func GetTransactionDeepHash(t *Transaction) ([]byte, error) {
+func GetTransactionDeepHash(t *types.Transaction) ([]byte, error) {
 	if t.Format != 2 {
 		return nil, errors.New("only type 2 transaction supported")
 	}
@@ -31,7 +32,7 @@ func GetTransactionDeepHash(t *Transaction) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = t.PrepareChunks(rawData)
+	err = PrepareChunks(t, rawData)
 	if err != nil {
 		return nil, err
 	}
@@ -64,13 +65,13 @@ func GetTransactionDeepHash(t *Transaction) ([]byte, error) {
 // This function computes the chunks for the data passed in and
 // assigns the result to this transaction. It should not read the
 // data *from* this transaction.
-func (t *Transaction) PrepareChunks(data []byte) error {
+func PrepareChunks(t *types.Transaction, data []byte) error {
 	if len(data) > 0 {
 		chunks, err := generateTransactionChunks(data)
 		if err != nil {
 			return err
 		}
-		t.Chunks = *chunks
+		t.ChunkData = chunks
 		t.DataRoot = (*chunks).DataRoot
 	}
 	return nil

@@ -1,4 +1,4 @@
-package tx
+package test
 
 import (
 	"encoding/base64"
@@ -7,13 +7,14 @@ import (
 
 	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestDecodeDataItem(t *testing.T) {
 	t.Run("DecodeDataItem - New empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tx.Tag{}
+		tags := []types.Tag{}
 		anchor := ""
 		target := ""
 		s, err := signer.FromPath("./signer.json")
@@ -28,14 +29,14 @@ func TestDecodeDataItem(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "gxngjcqu8Kz171MqWuKBAZVaum0cquKpBtwH5s2DucY9rOaxZsszXRnpoHQT7nVdAIPwc40WBqimclR_xJ3jZQ7UKAVKUPyePP_l5jh5Id4HVwwjPMtqApeipaQCJsFCYa33gEzS4NUdKSwGNr6C-Q6SqJ3CXfcwiLrliRHKARMzyhQaTCLwBJP4bHftUjadgix6oqx5hqMGHVWKboJkS6M22fTq4VeUd4whihcYPKzG_ow0aajw1VfqVsXTbQnne9XXXyDswQYiKdsL4OfwBaLtXiDURD12IFQqAkjJ9O68M1AZ102V_TDjZCDEGyRHqmV9yPwihcCbj8r0R7oHgKsDxpRSvxV3Vtx-DxxOUfn8UkdVuRzT9RRs1TLbrfNlIJL2RyjvOXo6fy8p4k_R_w6lAL83JSlXYe24cJj76zEw-CmJnuHVKkXmYeB2NaDFlmvH3Sl3NsraJauycd-1i7gDG0niKF2AeQt76UACamZx2LtE099jl1GetuUYEulNA2V_-zZlOvGH3Lg9x6yepMiW7t2YAXnNoKfD025fuUYXdn_0_IdDJcrySHa9tfrhQzU0gS4FTXjO4Xv9Nmjn9E2ADqb-vcaz73KLtOLHBG5TE60gzbSphi8J7S56zk1UUeZ_IsN9i_p0XeeLN_IpioGumAWcX_B6Pvzm3LBj1-0", dataItem.Owner)
 		assert.Equal(t, target, dataItem.Target)
-		assert.Equal(t, anchor,  dataItem.Anchor)
+		assert.Equal(t, anchor, dataItem.Anchor)
 		assert.Equal(t, base64.RawURLEncoding.EncodeToString([]byte(data)), dataItem.Data)
 		assert.ElementsMatch(t, tags, dataItem.Tags)
 	})
 
 	t.Run("DecodeDataItem - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tx.Tag{
+		tags := []types.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}
@@ -73,7 +74,7 @@ func TestDecodeDataItem(t *testing.T) {
 		assert.ElementsMatch(
 			t,
 			dataItem.Tags,
-			[]tx.Tag{
+			[]types.Tag{
 				{Name: "Content-Type", Value: "text/plain"},
 				{Name: "App-Name", Value: "ArDrive-CLI"},
 				{Name: "App-Version", Value: "1.21.0"},
@@ -82,21 +83,20 @@ func TestDecodeDataItem(t *testing.T) {
 		assert.Equal(t, dataItem.Data, "NTY3MAo")
 	})
 }
-
 func TestNewDataItem(t *testing.T) {
 	t.Run("NewDataItem - New empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tx.Tag{}
+		tags := []types.Tag{}
 		anchor := ""
 		target := ""
 
 		s, err := signer.FromPath("./signer.json")
 		assert.NoError(t, err)
-		
+
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
 		assert.Equal(t, "", dataItem.Owner)
 		assert.Equal(t, target, dataItem.Target)
-		assert.Equal(t, anchor,  dataItem.Anchor)
+		assert.Equal(t, anchor, dataItem.Anchor)
 		assert.Equal(t, base64.RawURLEncoding.EncodeToString([]byte(data)), dataItem.Data)
 		assert.ElementsMatch(t, tags, dataItem.Tags)
 
@@ -107,12 +107,12 @@ func TestNewDataItem(t *testing.T) {
 
 		assert.Equal(t, "gxngjcqu8Kz171MqWuKBAZVaum0cquKpBtwH5s2DucY9rOaxZsszXRnpoHQT7nVdAIPwc40WBqimclR_xJ3jZQ7UKAVKUPyePP_l5jh5Id4HVwwjPMtqApeipaQCJsFCYa33gEzS4NUdKSwGNr6C-Q6SqJ3CXfcwiLrliRHKARMzyhQaTCLwBJP4bHftUjadgix6oqx5hqMGHVWKboJkS6M22fTq4VeUd4whihcYPKzG_ow0aajw1VfqVsXTbQnne9XXXyDswQYiKdsL4OfwBaLtXiDURD12IFQqAkjJ9O68M1AZ102V_TDjZCDEGyRHqmV9yPwihcCbj8r0R7oHgKsDxpRSvxV3Vtx-DxxOUfn8UkdVuRzT9RRs1TLbrfNlIJL2RyjvOXo6fy8p4k_R_w6lAL83JSlXYe24cJj76zEw-CmJnuHVKkXmYeB2NaDFlmvH3Sl3NsraJauycd-1i7gDG0niKF2AeQt76UACamZx2LtE099jl1GetuUYEulNA2V_-zZlOvGH3Lg9x6yepMiW7t2YAXnNoKfD025fuUYXdn_0_IdDJcrySHa9tfrhQzU0gS4FTXjO4Xv9Nmjn9E2ADqb-vcaz73KLtOLHBG5TE60gzbSphi8J7S56zk1UUeZ_IsN9i_p0XeeLN_IpioGumAWcX_B6Pvzm3LBj1-0", dataItem.Owner)
 		assert.Equal(t, target, dataItem.Target)
-		assert.Equal(t, anchor,  dataItem.Anchor)
+		assert.Equal(t, anchor, dataItem.Anchor)
 		assert.Equal(t, base64.RawURLEncoding.EncodeToString([]byte(data)), dataItem.Data)
 	})
 	t.Run("NewDataItem - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tx.Tag{
+		tags := []types.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}
@@ -128,7 +128,7 @@ func TestNewDataItem(t *testing.T) {
 
 		assert.Equal(t, "gxngjcqu8Kz171MqWuKBAZVaum0cquKpBtwH5s2DucY9rOaxZsszXRnpoHQT7nVdAIPwc40WBqimclR_xJ3jZQ7UKAVKUPyePP_l5jh5Id4HVwwjPMtqApeipaQCJsFCYa33gEzS4NUdKSwGNr6C-Q6SqJ3CXfcwiLrliRHKARMzyhQaTCLwBJP4bHftUjadgix6oqx5hqMGHVWKboJkS6M22fTq4VeUd4whihcYPKzG_ow0aajw1VfqVsXTbQnne9XXXyDswQYiKdsL4OfwBaLtXiDURD12IFQqAkjJ9O68M1AZ102V_TDjZCDEGyRHqmV9yPwihcCbj8r0R7oHgKsDxpRSvxV3Vtx-DxxOUfn8UkdVuRzT9RRs1TLbrfNlIJL2RyjvOXo6fy8p4k_R_w6lAL83JSlXYe24cJj76zEw-CmJnuHVKkXmYeB2NaDFlmvH3Sl3NsraJauycd-1i7gDG0niKF2AeQt76UACamZx2LtE099jl1GetuUYEulNA2V_-zZlOvGH3Lg9x6yepMiW7t2YAXnNoKfD025fuUYXdn_0_IdDJcrySHa9tfrhQzU0gS4FTXjO4Xv9Nmjn9E2ADqb-vcaz73KLtOLHBG5TE60gzbSphi8J7S56zk1UUeZ_IsN9i_p0XeeLN_IpioGumAWcX_B6Pvzm3LBj1-0", dataItem.Owner)
 		assert.Equal(t, target, dataItem.Target)
-		assert.Equal(t, anchor,  dataItem.Anchor)
+		assert.Equal(t, anchor, dataItem.Anchor)
 		assert.Equal(t, base64.RawURLEncoding.EncodeToString([]byte(data)), dataItem.Data)
 	})
 }
@@ -136,7 +136,7 @@ func TestNewDataItem(t *testing.T) {
 func TestVerifyDataItem(t *testing.T) {
 	t.Run("VerifyDataItem - Empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tx.Tag{}
+		tags := []types.Tag{}
 		anchor := ""
 		target := ""
 
@@ -154,7 +154,7 @@ func TestVerifyDataItem(t *testing.T) {
 	})
 	t.Run("VerifyDataItem - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tx.Tag{
+		tags := []types.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}

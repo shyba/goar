@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
-	"github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
 )
 
 // arweave HTTP API: https://docs.arweave.org/developers/server/http-api
@@ -16,18 +17,19 @@ type Client struct {
 	url    string
 }
 
-func New(node string) *Client {
-	httpClient := http.DefaultClient
-	return &Client{client: httpClient, url: node}
+func New(url string) *Client {
+	return &Client{
+		client: &http.Client{Timeout: time.Second * 10},
+		url:    url,
+	}
 }
 
-func (c *Client) GetTransaction(id string) (*tx.Transaction, error) {
+func (c *Client) GetTransaction(id string) (*types.Transaction, error) {
 	body, err := c.get(fmt.Sprintf("transaction/%s", id))
 	if err != nil {
 		return nil, err
 	}
-
-	t := &tx.Transaction{}
+	t := &types.Transaction{}
 	err = json.Unmarshal(body, t)
 	if err != nil {
 		return nil, err
@@ -67,13 +69,13 @@ func (c *Client) GetTransactionData(id string) ([]byte, error) {
 	return body, nil
 }
 
-func (c *Client) GetTransactionTags(id string) ([]tx.Tag, error) {
+func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
 	jsTags, err := c.GetTransactionField(id, "tags")
 	if err != nil {
 		return nil, err
 	}
 
-	tags := make([]tx.Tag, 0)
+	tags := make([]types.Tag, 0)
 	if err := json.Unmarshal([]byte(jsTags), &tags); err != nil {
 		return nil, err
 	}
@@ -105,7 +107,7 @@ func (c *Client) GetTransactionAnchor() (string, error) {
 	return string(body), nil
 }
 
-func (c *Client) SubmitTransaction(transaction *tx.Transaction) (status string, code int, err error) {
+func (c *Client) SubmitTransaction(transaction *types.Transaction) (status string, code int, err error) {
 	b, err := json.Marshal(transaction)
 	if err != nil {
 		return

@@ -5,9 +5,10 @@ import (
 
 	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/tx"
+	"github.com/liteseed/goar/types"
 )
 
-func (s *Signer) SignTransaction(t *tx.Transaction) error {
+func (s *Signer) SignTransaction(t *types.Transaction) error {
 	signatureData, err := tx.GetTransactionDeepHash(t)
 	if err != nil {
 		return err
