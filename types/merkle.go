@@ -1,10 +1,9 @@
-package tx
+package types
 
 import (
 	"crypto/sha256"
 
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/types"
 )
 
 const (
@@ -28,7 +27,7 @@ const (
  * chunk and discards that chunk and proof if so.
  * (we do not need to upload this zero length chunk)
  */
-func generateTransactionChunks(data []byte) (*types.ChunkData, error) {
+func generateTransactionChunks(data []byte) (*ChunkData, error) {
 	chunks, err := chunkData(data)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,7 @@ func generateTransactionChunks(data []byte) (*types.ChunkData, error) {
 		proofs = proofs[:len(proofs)-1]
 	}
 
-	return &types.ChunkData{
+	return &ChunkData{
 		DataRoot: string(root.ID),
 		Chunks:   chunks,
 		Proofs:   proofs,
@@ -61,8 +60,8 @@ func generateTransactionChunks(data []byte) (*types.ChunkData, error) {
 
 }
 
-func chunkData(data []byte) ([]types.Chunk, error) {
-	chunks := []types.Chunk{}
+func chunkData(data []byte) ([]Chunk, error) {
+	chunks := []Chunk{}
 
 	rest := data
 	cursor := 0
@@ -84,7 +83,7 @@ func chunkData(data []byte) ([]types.Chunk, error) {
 		}
 
 		cursor += len(chunk)
-		chunks = append(chunks, types.Chunk{
+		chunks = append(chunks, Chunk{
 			DataHash:     dataHash[:],
 			MinByteRange: cursor - len(chunk),
 			MaxByteRange: cursor,
@@ -94,7 +93,7 @@ func chunkData(data []byte) ([]types.Chunk, error) {
 	}
 
 	hash := sha256.Sum256(rest)
-	chunks = append(chunks, types.Chunk{
+	chunks = append(chunks, Chunk{
 		DataHash:     hash[:],
 		MinByteRange: cursor,
 		MaxByteRange: cursor + len(rest),
@@ -102,8 +101,8 @@ func chunkData(data []byte) ([]types.Chunk, error) {
 	return chunks, nil
 }
 
-func generateLeaves(chunks []types.Chunk) ([]types.Node, error) {
-	leaves := []types.Node{}
+func generateLeaves(chunks []Chunk) ([]Node, error) {
+	leaves := []Node{}
 	for _, chunk := range chunks {
 		hashDataHash, err := crypto.SHA256(chunk.DataHash)
 		if err != nil {
@@ -115,7 +114,7 @@ func generateLeaves(chunks []types.Chunk) ([]types.Node, error) {
 		}
 
 		id := append(hashDataHash, hashMaxByteRange...)
-		leaves = append(leaves, types.Node{
+		leaves = append(leaves, Node{
 			ID:           id,
 			DataHash:     chunk.DataHash,
 			MinByteRange: chunk.MinByteRange,
@@ -129,7 +128,7 @@ func generateLeaves(chunks []types.Chunk) ([]types.Node, error) {
 }
 
 // buildLayer
-func buildLayer(nodes []types.Node, level int) (*types.Node, error) {
+func buildLayer(nodes []Node, level int) (*Node, error) {
 	if len(nodes) == 1 {
 		return &nodes[0], nil
 	}
@@ -140,7 +139,7 @@ func buildLayer(nodes []types.Node, level int) (*types.Node, error) {
 	return node, nil
 }
 
-func hashBranch(left *types.Node, right *types.Node) (*types.Node, error) {
+func hashBranch(left *Node, right *Node) (*Node, error) {
 	if right == nil {
 		return left, nil
 	}
@@ -158,7 +157,7 @@ func hashBranch(left *types.Node, right *types.Node) (*types.Node, error) {
 	}
 
 	id := append(leftIdHash, append(rightIdHash, leftMaxByteRangeHash...)...)
-	return &types.Node{
+	return &Node{
 		ID:           id,
 		MinByteRange: left.MinByteRange,
 		MaxByteRange: left.MaxByteRange,
@@ -168,9 +167,9 @@ func hashBranch(left *types.Node, right *types.Node) (*types.Node, error) {
 	}, nil
 }
 
-func generateProofs(node *types.Node, proofData []byte, depth int) []types.Proof {
+func generateProofs(node *Node, proofData []byte, depth int) []Proof {
 	if node.Type == Leaf {
-		return []types.Proof{{
+		return []Proof{{
 			Offset: node.MaxByteRange - 1,
 			Proof:  append(proofData, append(node.DataHash, encodeUint(uint64(node.MaxByteRange))...)...),
 		}}
@@ -187,5 +186,5 @@ func generateProofs(node *types.Node, proofData []byte, depth int) []types.Proof
 
 		return append(leftProofs, rightProofs...)
 	}
-	return []types.Proof{}
+	return []Proof{}
 }

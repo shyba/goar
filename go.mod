@@ -7,8 +7,6 @@ toolchain go1.22.1
 require (
 	github.com/everFinance/gojwk v1.0.0
 	github.com/linkedin/goavro/v2 v2.12.0
-	github.com/panjf2000/ants/v2 v2.9.1
-	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.4
 )
 

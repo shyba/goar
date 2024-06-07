@@ -1,10 +1,10 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/liteseed/goar/types"
@@ -13,19 +13,19 @@ import (
 // arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 
 type Client struct {
-	client *http.Client
-	url    string
+	client  *http.Client
+	gateway string
 }
 
-func New(url string) *Client {
+func New(gateway string) *Client {
 	return &Client{
-		client: &http.Client{Timeout: time.Second * 10},
-		url:    url,
+		client:  &http.Client{Timeout: time.Second * 10},
+		gateway: gateway,
 	}
 }
 
-func (c *Client) GetTransaction(id string) (*types.Transaction, error) {
-	body, err := c.get(fmt.Sprintf("transaction/%s", id))
+func (c *Client) GetTransaction(ctx context.Context, id string) (*types.Transaction, error) {
+	body, err := c.get(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func (c *Client) GetTransaction(id string) (*types.Transaction, error) {
 	return t, nil
 }
 
-func (c *Client) GetTransactionStatus(id string) (*TransactionStatus, error) {
-	body, err := c.get(fmt.Sprintf("transaction/%s/status", id))
+func (c *Client) GetTransactionStatus(id string) (*types.TransactionStatus, error) {
+	body, err := c.get(fmt.Sprintf("tx/%s/status", id))
 	if err != nil {
 		return nil, err
 	}
 
-	t := &TransactionStatus{}
+	t := &types.TransactionStatus{}
 	err = json.Unmarshal(body, t)
 	if err != nil {
 		return nil, err
@@ -52,69 +52,109 @@ func (c *Client) GetTransactionStatus(id string) (*TransactionStatus, error) {
 }
 
 func (c *Client) GetTransactionField(id string, field string) (string, error) {
-	body, err := c.get(fmt.Sprintf("transaction/%s/%s", id, field))
+	body, err := c.get(fmt.Sprintf("tx/%s/%s", id, field))
 	if err != nil {
 		return "", err
 	}
-
 	return string(body), nil
 }
 
 func (c *Client) GetTransactionData(id string) ([]byte, error) {
-	body, err := c.get(fmt.Sprintf("transaction/%s", id))
+	body, err := c.get(id)
 	if err != nil {
 		return nil, err
 	}
-
 	return body, nil
 }
 
-func (c *Client) GetTransactionTags(id string) ([]types.Tag, error) {
-	jsTags, err := c.GetTransactionField(id, "tags")
-	if err != nil {
-		return nil, err
-	}
-
-	tags := make([]types.Tag, 0)
-	if err := json.Unmarshal([]byte(jsTags), &tags); err != nil {
-		return nil, err
-	}
-	return tags, nil
-}
-
-func (c *Client) GetTransactionPrice(size int, target *string) (int64, error) {
-	url := fmt.Sprintf("price/%d", size)
-	if target != nil {
-		url = fmt.Sprintf("%v/%v", url, *target)
-	}
-
+func (c *Client) GetTransactionPrice(size int, target string) (string, error) {
+	url := fmt.Sprintf("price/%d/%s", size, target)
 	body, err := c.get(url)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	price, err := strconv.ParseInt(string(body), 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return price, nil
+
+	return string(body), nil
 }
 
-func (c *Client) GetTransactionAnchor() (string, error) {
-	body, err := c.get("transaction_anchor")
+func (c *Client) SubmitTransaction(t *types.Transaction) ([]byte, int, error) {
+	b, err := json.Marshal(t)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	body, statusCode, err := c.httpPost("tx", b)
+	if err != nil {
+		return nil, statusCode, err
+	}
+
+	return body, statusCode, nil
+}
+
+func (c *Client) GetWalletBalance(address string) (string, error) {
+	body, err := c.get(fmt.Sprintf("wallet/%s/balance", address))
 	if err != nil {
 		return "", err
 	}
 	return string(body), nil
 }
 
-func (c *Client) SubmitTransaction(transaction *types.Transaction) (status string, code int, err error) {
-	b, err := json.Marshal(transaction)
+func (c *Client) GetLastTransactionID(address string) (string, error) {
+	body, err := c.get(fmt.Sprintf("wallet/%s/last_tx", address))
 	if err != nil {
-		return
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (c *Client) GetBlockByID(id string) (*types.Block, error) {
+	body, err := c.get(fmt.Sprintf("block/hash/%s", id))
+	if err != nil {
+		return nil, err
+	}
+	b := &types.Block{}
+	err = json.Unmarshal(body, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (c *Client) GetBlockByHeight(height string) (*types.Block, error) {
+	body, err := c.get(fmt.Sprintf("block/hash/%s", height))
+	if err != nil {
+		return nil, err
+	}
+	b := &types.Block{}
+	err = json.Unmarshal(body, b)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (c *Client) GetNetworkInfo() (*types.NetworkInfo, error) {
+	body, err := c.get("info")
+	if err != nil {
+		return nil, err
+	}
+	n := &types.NetworkInfo{}
+	err = json.Unmarshal(body, n)
+	if err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
+func (c *Client) UploadChunk(chunk *types.GetChunkResult) ([]byte, int, error) {
+	b, err := json.Marshal(chunk)
+	if err != nil {
+		return nil, -1, err
+	}
+	body, statusCode, err := c.httpPost("tx", b)
+	if err != nil {
+		return nil, -1, err
 	}
 
-	body, statusCode, err := c.httpPost("transaction", b)
-	status = string(body)
-	code = statusCode
-	return
+	return body, statusCode, nil
 }

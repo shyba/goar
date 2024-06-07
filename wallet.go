@@ -1,14 +1,13 @@
 package goar
 
 import (
-	"context"
-	"fmt"
+	"errors"
 	"os"
 
 	"github.com/liteseed/goar/client"
-	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/uploader"
 )
 
 type Wallet struct {
@@ -37,63 +36,29 @@ func FromPath(path string, node string) (*Wallet, error) {
 	return New(b, node)
 }
 
-func (w *Wallet) Owner() string {
-	return w.Signer.Owner()
-}
-
-func (w *Wallet) SendData(data []byte, tags []types.Tag) (types.Transaction, error) {
-	return w.SendDataSpeedUp(data, tags, 0)
-}
-
-// SendDataSpeedUp set speedFactor for speed up
-// eg: speedFactor = 10, reward = 1.1 * reward
-func (w *Wallet) SendDataSpeedUp(data []byte, tags []types.Tag, speedFactor int64) (types.Transaction, error) {
-	reward, err := w.Client.GetTransactionPrice(len(data), nil)
-	if err != nil {
-		return types.Transaction{}, err
-	}
-
-	tx := &types.Transaction{
-		Format:   2,
-		Target:   "",
-		Quantity: "0",
-		Tags:     tags,
-		Data:     crypto.Base64Encode(data),
-		DataSize: fmt.Sprintf("%d", len(data)),
-		Reward:   fmt.Sprintf("%d", reward*(100+speedFactor)/100),
-	}
-
-	return w.SendTransaction(tx)
-}
-
-// SendTransaction: if send success, should return pending
-func (w *Wallet) SendTransaction(transaction *types.Transaction) (types.Transaction, error) {
-	uploader, err := w.getUploader(transaction)
-	if err != nil {
-		return types.Transaction{}, err
-	}
-	err = uploader.Once()
-	return *transaction, err
-}
-
-func (w *Wallet) SendTransactionConcurrent(ctx context.Context, concurrentNum int, transaction *types.Transaction) (types.Transaction, error) {
-	uploader, err := w.getUploader(transaction)
-	if err != nil {
-		return types.Transaction{}, err
-	}
-	err = uploader.ConcurrentOnce(ctx, concurrentNum)
-	return *transaction, err
-}
-
-func (w *Wallet) getUploader(transaction *types.Transaction) (*client.TransactionUploader, error) {
-	anchor, err := w.Client.GetTransactionAnchor()
+func (w *Wallet) SignTransaction(t *types.Transaction) (*types.Transaction, error) {
+	anchor, err := w.Client.GetLastTransactionID(w.Signer.Address)
 	if err != nil {
 		return nil, err
 	}
-	transaction.LastTx = anchor
-	transaction.Owner = w.Owner()
-	if err = w.Signer.SignTransaction(transaction); err != nil {
+	t.LastTx = anchor
+	t.Owner = w.Signer.Owner()
+	if err = w.Signer.SignTransaction(t); err != nil {
 		return nil, err
 	}
-	return client.CreateUploader(w.Client, transaction, nil)
+	return t, nil
+}
+
+func (w *Wallet) SendTransaction(t *types.Transaction) (*types.Transaction, error) {
+	if t.ID == "" || t.Signature == "" {
+		return nil, errors.New("transaction not signed")
+	}
+	tu, err := uploader.New(w.Client, t)
+	if err != nil {
+		return nil, err
+	}
+	if err = tu.PostTransaction(); err != nil {
+		return nil, err
+	}
+	return t, nil
 }

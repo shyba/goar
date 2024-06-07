@@ -1,11 +1,10 @@
-package test
+package signer
 
 import (
 	"encoding/base64"
 	"os"
 	"testing"
 
-	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/tx"
 	"github.com/liteseed/goar/types"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ func TestDecodeDataItem(t *testing.T) {
 		tags := []types.Tag{}
 		anchor := ""
 		target := ""
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 
 		a, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -43,7 +42,7 @@ func TestDecodeDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 
 		a, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -90,7 +89,7 @@ func TestNewDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -119,7 +118,7 @@ func TestNewDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
@@ -140,7 +139,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -161,7 +160,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := signer.FromPath("./signer.json")
+		s, err := FromPath("./json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)

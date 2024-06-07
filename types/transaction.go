@@ -1,5 +1,12 @@
 package types
 
+import (
+	"errors"
+	"fmt"
+
+	"github.com/liteseed/goar/crypto"
+)
+
 type Chunk struct {
 	DataHash     []byte `json:"data_hash"`
 	MinByteRange int    `json:"min_byte_range"`
@@ -45,3 +52,59 @@ type Transaction struct {
 	ChunkData *ChunkData
 }
 
+type TransactionOffset struct {
+	Size   int64 `json:"size"`
+	Offset int64 `json:"offset"`
+}
+type TransactionChunk struct {
+	Chunk    string `json:"chunk"`
+	DataPath string `json:"data_path"`
+	TxPath   string `json:"tx_path"`
+}
+
+type TransactionStatus struct {
+	BlockHeight           int    `json:"block_height"`
+	BlockIndepHash        string `json:"block_indep_hash"`
+	NumberOfConfirmations int    `json:"number_of_confirmations"`
+}
+
+// Note: we *do not* use `t.Data`, the caller may be
+// operating on a transaction with an zero length data field.
+// This function computes the chunks for the data passed in and
+// assigns the result to this transaction. It should not read the
+// data *from* this transaction.
+func (t *Transaction) PrepareChunks(data []byte) error {
+	if len(data) > 0 {
+		chunks, err := generateTransactionChunks(data)
+		if err != nil {
+			return err
+		}
+		t.ChunkData = chunks
+		t.DataRoot = (*chunks).DataRoot
+	}
+	return nil
+}
+
+type GetChunkResult struct {
+	DataRoot string `json:"data_root"`
+	DataSize string `json:"data_size"`
+	DataPath string `json:"data_path"`
+	Offset   string `json:"offset"`
+	Chunk    string `json:"chunks"`
+}
+
+func (t *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
+	if t.ChunkData != nil {
+		return nil, errors.New("chunks have not been prepared")
+	}
+	proof := t.ChunkData.Proofs[i]
+	chunk := t.ChunkData.Chunks[i]
+
+	return &GetChunkResult{
+		DataRoot: t.DataRoot,
+		DataSize: t.DataSize,
+		DataPath: crypto.Base64Encode(proof.Proof),
+		Offset:   fmt.Sprint(proof.Offset),
+		Chunk:    crypto.Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
+	}, nil
+}
