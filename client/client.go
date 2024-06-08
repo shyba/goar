@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -24,7 +23,7 @@ func New(gateway string) *Client {
 	}
 }
 
-func (c *Client) GetTransaction(ctx context.Context, id string) (*types.Transaction, error) {
+func (c *Client) GetTransaction(id string) (*types.Transaction, error) {
 	body, err := c.get(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return nil, err
