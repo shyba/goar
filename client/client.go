@@ -13,14 +13,14 @@ import (
 // arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 
 type Client struct {
-	client  *http.Client
-	gateway string
+	Client  *http.Client
+	Gateway string
 }
 
 func New(gateway string) *Client {
 	return &Client{
-		client:  &http.Client{Timeout: time.Second * 10},
-		gateway: gateway,
+		Client:  &http.Client{Timeout: time.Second * 10},
+		Gateway: gateway,
 	}
 }
 

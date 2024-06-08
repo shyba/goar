@@ -8,14 +8,14 @@ import (
 )
 
 func (c *Client) get(_path string) ([]byte, error) {
-	u, err := url.Parse(c.gateway)
+	u, err := url.Parse(c.Gateway)
 	if err != nil {
 		return nil, err
 	}
 
 	u.Path = path.Join(u.Path, _path)
 
-	resp, err := c.client.Get(u.String())
+	resp, err := c.Client.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -28,14 +28,14 @@ func (c *Client) get(_path string) ([]byte, error) {
 }
 
 func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode int, err error) {
-	u, err := url.Parse(c.gateway)
+	u, err := url.Parse(c.Gateway)
 	if err != nil {
 		return
 	}
 
 	u.Path = path.Join(u.Path, _path)
 
-	resp, err := c.client.Post(u.String(), "application/json", bytes.NewReader(payload))
+	resp, err := c.Client.Post(u.String(), "application/json", bytes.NewReader(payload))
 	if err != nil {
 		return
 	}
