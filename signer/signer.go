@@ -2,7 +2,6 @@ package signer
 
 import (
 	"crypto/rsa"
-	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -35,7 +34,7 @@ func New(b []byte) (*Signer, error) {
 	}
 	publicKey, ok := rsaPublicKey.(*rsa.PublicKey)
 	if !ok {
-		err = fmt.Errorf("pubKey type error")
+		err = fmt.Errorf("public key type error")
 		return nil, err
 	}
 
@@ -45,25 +44,33 @@ func New(b []byte) (*Signer, error) {
 	}
 	privateKey, ok := rsaPrivateKey.(*rsa.PrivateKey)
 	if !ok {
-		err = fmt.Errorf("prvKey type error")
+		err = fmt.Errorf("private key type error")
 		return nil, err
 	}
-	addr := sha256.Sum256(publicKey.N.Bytes())
+
+	address, err := crypto.GetAddressFromPublicKey(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Signer{
-		Address:    crypto.Base64Encode(addr[:]),
+		Address:    address,
 		PublicKey:  publicKey,
 		PrivateKey: privateKey,
 	}, nil
 }
 
-func FromPrivateKey(privateKey *rsa.PrivateKey) *Signer {
-	pub := &privateKey.PublicKey
-	addr := sha256.Sum256(pub.N.Bytes())
-	return &Signer{
-		Address:    crypto.Base64Encode(addr[:]),
-		PublicKey:  pub,
-		PrivateKey: privateKey,
+func FromPrivateKey(privateKey *rsa.PrivateKey) (*Signer, error) {
+	p := &privateKey.PublicKey
+	address, err := crypto.GetAddressFromPublicKey(p)
+	if err != nil {
+		return nil, err
 	}
+	return &Signer{
+		Address:    address,
+		PublicKey:  p,
+		PrivateKey: privateKey,
+	}, nil
 }
 
 func (s *Signer) Owner() string {
