@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/liteseed/goar/client"
-	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/transaction"
 )
 
 const (
@@ -30,10 +30,9 @@ var FATAL_CHUNK_UPLOAD_ERRORS = []string{
 
 type TransactionUploader struct {
 	client             *client.Client
-	transaction        *types.Transaction
+	transaction        *transaction.Transaction
 	ChunkIndex         int
 	TxPosted           bool
-	Transaction        *types.Transaction
 	Data               []byte
 	LastRequestTimeEnd int64
 	TotalErrors        int // Not serialized.
@@ -42,13 +41,12 @@ type TransactionUploader struct {
 	TotalChunks        int
 }
 
-func New(c *client.Client, t *types.Transaction) (*TransactionUploader, error) {
+func New(c *client.Client, t *transaction.Transaction) (*TransactionUploader, error) {
 	return &TransactionUploader{
 		client:             c,
 		transaction:        t,
 		ChunkIndex:         0,
 		TxPosted:           false,
-		Transaction:        t,
 		Data:               nil,
 		LastRequestTimeEnd: 0,
 		TotalErrors:        0,
@@ -76,7 +74,7 @@ func (tu *TransactionUploader) PostTransaction() error {
 	} else {
 		// Post transaction with no data
 		t := tu.transaction
-		t.Data = ""
+		t.Data = nil
 		_, code, err := tu.client.SubmitTransaction(t)
 		if err != nil {
 			return err

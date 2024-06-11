@@ -88,7 +88,11 @@ func VerifyDataItem(dataItem *types.DataItem) error {
 		return err
 	}
 
-	err = crypto.Verify(chunks, rawSignature, dataItem.Owner)
+	publicKey, err := crypto.GetPublicKeyFromOwner(dataItem.Owner)
+	if err != nil {
+		return err
+	}
+	err = crypto.Verify(chunks, rawSignature, publicKey)
 	if err != nil {
 		return err
 	}

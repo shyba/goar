@@ -6,13 +6,9 @@ import (
 	"crypto/sha256"
 )
 
-func Verify(data []byte, signature []byte, owner string) error {
+func Verify(data []byte, signature []byte, publicKey *rsa.PublicKey) error {
 	hashed := sha256.Sum256(data)
 
-	publicKey, err := GetPublicKeyFromOwner(owner)
-	if err != nil {
-		return err
-	}
 	return rsa.VerifyPSS(publicKey, crypto.SHA256, hashed[:], signature, &rsa.PSSOptions{
 		SaltLength: rsa.PSSSaltLengthAuto,
 		Hash:       crypto.SHA256,

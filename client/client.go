@@ -3,9 +3,11 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/liteseed/goar/transaction"
 	"github.com/liteseed/goar/types"
 )
 
@@ -23,7 +25,7 @@ func New(gateway string) *Client {
 	}
 }
 
-func (c *Client) GetTransaction(id string) (*types.Transaction, error) {
+func (c *Client) GetTransactionByID(id string) (*types.Transaction, error) {
 	body, err := c.get(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return nil, err
@@ -76,12 +78,13 @@ func (c *Client) GetTransactionPrice(size int, target string) (string, error) {
 	return string(body), nil
 }
 
-func (c *Client) SubmitTransaction(t *types.Transaction) ([]byte, int, error) {
-	b, err := json.Marshal(t)
+func (c *Client) SubmitTransaction(tx *transaction.Transaction) ([]byte, int, error) {
+	b, err := json.Marshal(tx)
 	if err != nil {
 		return nil, -1, err
 	}
 
+	log.Println(tx)
 	body, statusCode, err := c.httpPost("tx", b)
 	if err != nil {
 		return nil, statusCode, err
@@ -145,7 +148,7 @@ func (c *Client) GetNetworkInfo() (*types.NetworkInfo, error) {
 	return n, nil
 }
 
-func (c *Client) UploadChunk(chunk *types.GetChunkResult) ([]byte, int, error) {
+func (c *Client) UploadChunk(chunk *transaction.GetChunkResult) ([]byte, int, error) {
 	b, err := json.Marshal(chunk)
 	if err != nil {
 		return nil, -1, err

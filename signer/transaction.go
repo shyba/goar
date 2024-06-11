@@ -1,25 +1,25 @@
 package signer
 
 import (
-	"crypto/sha256"
-
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/tx"
-	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/transaction"
 )
 
-func (s *Signer) SignTransaction(t *types.Transaction) error {
-	signatureData, err := tx.GetTransactionDeepHash(t)
+func (s *Signer) SignTransaction(tx *transaction.Transaction) error {
+	signatureData, err := transaction.GetTransactionDeepHash(tx)
 	if err != nil {
 		return err
 	}
-	rawSignature, err := crypto.Sign(signatureData, s.PrivateKey)
+	rawSignature, err := s.Sign(signatureData)
+	if err != nil {
+		return err
+	}
+	txId, err := crypto.SHA256(rawSignature)
 	if err != nil {
 		return err
 	}
 
-	txId := sha256.Sum256(rawSignature)
-	t.ID = crypto.Base64Encode(txId[:])
-	t.Signature = crypto.Base64Encode(rawSignature)
+	tx.ID = crypto.Base64Encode(txId[:])
+	tx.Signature = crypto.Base64Encode(rawSignature)
 	return nil
 }

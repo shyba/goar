@@ -16,7 +16,7 @@ func TestDecodeDataItem(t *testing.T) {
 		tags := []types.Tag{}
 		anchor := ""
 		target := ""
-		s, err := FromPath("./json")
+		s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 
 		a, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -42,7 +42,7 @@ func TestDecodeDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := FromPath("./json")
+			s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 
 		a, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -60,7 +60,7 @@ func TestDecodeDataItem(t *testing.T) {
 		assert.Equal(t, dataItem.Data, base64.RawURLEncoding.EncodeToString([]byte(data)))
 	})
 	t.Run("DecodeDataItem - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("./stubs/1115BDataItem")
+		data, err := os.ReadFile("../test/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.DecodeDataItem(data)
@@ -89,7 +89,7 @@ func TestNewDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := FromPath("./json")
+			s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -118,7 +118,7 @@ func TestNewDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := FromPath("./json")
+			s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
@@ -139,7 +139,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		s, err := FromPath("./json")
+			s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -160,7 +160,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		s, err := FromPath("./json")
+			s, err := FromPath("../test/signer.json")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.NewDataItem([]byte(data), target, anchor, tags)
@@ -173,7 +173,7 @@ func TestVerifyDataItem(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("VerifyDataItem - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("./stubs/1115BDataItem")
+		data, err := os.ReadFile("../test/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := tx.DecodeDataItem(data)
