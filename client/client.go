@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -84,7 +83,6 @@ func (c *Client) SubmitTransaction(tx *transaction.Transaction) ([]byte, int, er
 		return nil, -1, err
 	}
 
-	log.Println(tx)
 	body, statusCode, err := c.httpPost("tx", b)
 	if err != nil {
 		return nil, statusCode, err

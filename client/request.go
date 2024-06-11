@@ -35,7 +35,7 @@ func (c *Client) httpPost(_path string, payload []byte) (body []byte, statusCode
 
 	u.Path = path.Join(u.Path, _path)
 
-	resp, err := c.Client.Post(u.String(), "application/json", bytes.NewBufferString(string(payload)))
+	resp, err := c.Client.Post(u.String(), "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return
 	}
