@@ -11,7 +11,7 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	s, err := signer.FromPath("./test/signer.json")
+	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 	t.Run("Decode - New empty test data item", func(t *testing.T) {
 		data := ""
@@ -81,7 +81,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	s, err := signer.FromPath("./test/signer.json")
+	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 
 	t.Run("New - New empty test data item", func(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestVerifyDataItem(t *testing.T) {
-	s, err := signer.FromPath("./test/signer.json")
+	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 
 	t.Run("Verify - Empty test data item", func(t *testing.T) {
