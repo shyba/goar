@@ -1,10 +1,12 @@
-package tx
+package data_item
 
 import (
+	"encoding/binary"
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/signer"
+	"github.com/liteseed/goar/tag"
 )
 
 const (
@@ -13,8 +15,8 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
-func NewDataItem(rawData []byte, target string, anchor string, tags []types.Tag) (*types.DataItem, error) {
-	return &types.DataItem{
+func New(rawData []byte, target string, anchor string, tags []tag.Tag) (*DataItem, error) {
+	return &DataItem{
 		Target: target,
 		Anchor: anchor,
 		Tags:   tags,
@@ -23,7 +25,7 @@ func NewDataItem(rawData []byte, target string, anchor string, tags []types.Tag)
 }
 
 // Decode a DataItem from bytes
-func DecodeDataItem(raw []byte) (*types.DataItem, error) {
+func Decode(raw []byte) (*DataItem, error) {
 	N := len(raw)
 	if N < 2 {
 		return nil, errors.New("binary too small")
@@ -49,13 +51,13 @@ func DecodeDataItem(raw []byte) (*types.DataItem, error) {
 	position := ownerEnd
 	target, position := getTarget(&raw, position)
 	anchor, position := getAnchor(&raw, position)
-	tags, position, err := EncodeTags(raw, position)
+	tags, position, err := tag.Encode(raw, position)
 	if err != nil {
 		return nil, err
 	}
 	data := crypto.Base64Encode(raw[position:])
 
-	return &types.DataItem{
+	return &DataItem{
 		ID:            id,
 		SignatureType: signatureType,
 		Signature:     signature,
@@ -68,7 +70,7 @@ func DecodeDataItem(raw []byte) (*types.DataItem, error) {
 	}, nil
 }
 
-func VerifyDataItem(dataItem *types.DataItem) error {
+func Verify(dataItem *DataItem) error {
 	// Verify ID
 	rawSignature, err := crypto.Base64Decode(dataItem.Signature)
 	if err != nil {
@@ -117,7 +119,7 @@ func VerifyDataItem(dataItem *types.DataItem) error {
 	return nil
 }
 
-func GetDataItemChunk(owner string, target string, anchor string, tags []types.Tag, data string) ([]byte, error) {
+func GetDataItemChunk(owner string, target string, anchor string, tags []tag.Tag, data string) ([]byte, error) {
 	rawOwner, err := crypto.Base64Decode(owner)
 	if err != nil {
 		return nil, err
@@ -129,7 +131,7 @@ func GetDataItemChunk(owner string, target string, anchor string, tags []types.T
 	}
 	rawAnchor := []byte(anchor)
 
-	rawTags, err := DecodeTags(tags)
+	rawTags, err := tag.Decode(tags)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +140,7 @@ func GetDataItemChunk(owner string, target string, anchor string, tags []types.T
 		return nil, err
 	}
 
-	chunks := []any{
+	chunks := [][]byte{
 		[]byte("dataitem"),
 		[]byte("1"),
 		[]byte("1"),
@@ -150,4 +152,74 @@ func GetDataItemChunk(owner string, target string, anchor string, tags []types.T
 	}
 	deepHashChunk := crypto.DeepHash(chunks)
 	return deepHashChunk[:], nil
+}
+
+func (dataItem *DataItem) Sign(s *signer.Signer) error {
+	deepHashChunk, err := GetDataItemChunk(s.Owner(), dataItem.Target, dataItem.Anchor, dataItem.Tags, dataItem.Data)
+	if err != nil {
+		return err
+	}
+
+	rawSignature, err := crypto.Sign(deepHashChunk, s.PrivateKey)
+	if err != nil {
+		return err
+	}
+
+	rawOwner, err := crypto.Base64Decode(s.Owner())
+	if err != nil {
+		return err
+	}
+
+	rawTarget, err := crypto.Base64Decode(dataItem.Target)
+	if err != nil {
+		return err
+	}
+	rawAnchor := []byte(dataItem.Anchor)
+
+	rawTags, err := tag.Decode(dataItem.Tags)
+	if err != nil {
+		return err
+	}
+	rawData, err := crypto.Base64Decode(dataItem.Data)
+	if err != nil {
+		return err
+	}
+
+	raw := make([]byte, 0)
+	raw = binary.LittleEndian.AppendUint16(raw, uint16(1))
+	raw = append(raw, rawSignature...)
+	raw = append(raw, rawOwner...)
+
+	if dataItem.Target == "" {
+		raw = append(raw, 0)
+	} else {
+		raw = append(raw, 1)
+	}
+	raw = append(raw, rawTarget...)
+
+	if dataItem.Anchor == "" {
+		raw = append(raw, 0)
+	} else {
+		raw = append(raw, 1)
+	}
+	raw = append(raw, rawAnchor...)
+	numberOfTags := make([]byte, 8)
+	binary.LittleEndian.PutUint16(numberOfTags, uint16(len(dataItem.Tags)))
+	raw = append(raw, numberOfTags...)
+
+	tagsLength := make([]byte, 8)
+	binary.LittleEndian.PutUint16(tagsLength, uint16(len(rawTags)))
+	raw = append(raw, tagsLength...)
+	raw = append(raw, rawTags...)
+	raw = append(raw, rawData...)
+	rawID, err := crypto.SHA256(rawSignature)
+	if err != nil {
+		return err
+	}
+
+	dataItem.Owner = s.Owner()
+	dataItem.Signature = crypto.Base64Encode(rawSignature)
+	dataItem.ID = crypto.Base64Encode(rawID)
+	dataItem.Raw = raw
+	return nil
 }

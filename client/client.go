@@ -3,11 +3,11 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/liteseed/goar/transaction"
-	"github.com/liteseed/goar/types"
 )
 
 // arweave HTTP API: https://docs.arweave.org/developers/server/http-api
@@ -24,12 +24,13 @@ func New(gateway string) *Client {
 	}
 }
 
-func (c *Client) GetTransactionByID(id string) (*types.Transaction, error) {
+func (c *Client) GetTransactionByID(id string) (*transaction.Transaction, error) {
 	body, err := c.get(fmt.Sprintf("tx/%s", id))
 	if err != nil {
 		return nil, err
 	}
-	t := &types.Transaction{}
+	log.Println(string(body))
+	t := &transaction.Transaction{}
 	err = json.Unmarshal(body, t)
 	if err != nil {
 		return nil, err
@@ -37,13 +38,13 @@ func (c *Client) GetTransactionByID(id string) (*types.Transaction, error) {
 	return t, nil
 }
 
-func (c *Client) GetTransactionStatus(id string) (*types.TransactionStatus, error) {
+func (c *Client) GetTransactionStatus(id string) (*TransactionStatus, error) {
 	body, err := c.get(fmt.Sprintf("tx/%s/status", id))
 	if err != nil {
 		return nil, err
 	}
 
-	t := &types.TransactionStatus{}
+	t := &TransactionStatus{}
 	err = json.Unmarshal(body, t)
 	if err != nil {
 		return nil, err
@@ -77,6 +78,14 @@ func (c *Client) GetTransactionPrice(size int, target string) (string, error) {
 	return string(body), nil
 }
 
+func (c *Client) GetTransactionAnchor() (string, error) {
+	body, err := c.get("tx_anchor")
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
 func (c *Client) SubmitTransaction(tx *transaction.Transaction) ([]byte, int, error) {
 	b, err := json.Marshal(tx)
 	if err != nil {
@@ -107,12 +116,12 @@ func (c *Client) GetLastTransactionID(address string) (string, error) {
 	return string(body), nil
 }
 
-func (c *Client) GetBlockByID(id string) (*types.Block, error) {
+func (c *Client) GetBlockByID(id string) (*Block, error) {
 	body, err := c.get(fmt.Sprintf("block/hash/%s", id))
 	if err != nil {
 		return nil, err
 	}
-	b := &types.Block{}
+	b := &Block{}
 	err = json.Unmarshal(body, b)
 	if err != nil {
 		return nil, err
@@ -120,12 +129,12 @@ func (c *Client) GetBlockByID(id string) (*types.Block, error) {
 	return b, nil
 }
 
-func (c *Client) GetBlockByHeight(height string) (*types.Block, error) {
+func (c *Client) GetBlockByHeight(height string) (*Block, error) {
 	body, err := c.get(fmt.Sprintf("block/hash/%s", height))
 	if err != nil {
 		return nil, err
 	}
-	b := &types.Block{}
+	b := &Block{}
 	err = json.Unmarshal(body, b)
 	if err != nil {
 		return nil, err
@@ -133,17 +142,17 @@ func (c *Client) GetBlockByHeight(height string) (*types.Block, error) {
 	return b, nil
 }
 
-func (c *Client) GetNetworkInfo() (*types.NetworkInfo, error) {
+func (c *Client) GetNetworkInfo() (*NetworkInfo, error) {
 	body, err := c.get("info")
 	if err != nil {
 		return nil, err
 	}
-	n := &types.NetworkInfo{}
-	err = json.Unmarshal(body, n)
+	n := NetworkInfo{}
+	err = json.Unmarshal(body, &n)
 	if err != nil {
 		return nil, err
 	}
-	return n, nil
+	return &n, nil
 }
 
 func (c *Client) UploadChunk(chunk *transaction.GetChunkResult) ([]byte, int, error) {

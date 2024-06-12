@@ -1,27 +1,27 @@
-package tx
+package bundle
 
 import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/types"
+	"github.com/liteseed/goar/data_item"
 )
 
-func DecodeBundle(data []byte) (*types.Bundle, error) {
+func Decode(data []byte) (*Bundle, error) {
 	// length must more than 32
 	if len(data) < 32 {
 		return nil, errors.New("binary length must more than 32")
 	}
 	headers, N := decodeBundleHeader(&data)
-	bundle := &types.Bundle{
-		Items:   make([]types.DataItem, N),
+	bundle := &Bundle{
+		Items:   make([]data_item.DataItem, N),
 		RawData: crypto.Base64Encode(data),
 	}
 	bundleStart := 32 + 64*N
 	for i := 0; i < N; i++ {
 		header := (*headers)[i]
 		bundleEnd := bundleStart + header.Size
-		dataItem, err := DecodeDataItem(data[bundleStart:bundleEnd])
+		dataItem, err := data_item.Decode(data[bundleStart:bundleEnd])
 		if err != nil {
 			return nil, err
 		}
@@ -31,8 +31,8 @@ func DecodeBundle(data []byte) (*types.Bundle, error) {
 	return bundle, nil
 }
 
-func NewBundle(dataItems *[]types.DataItem) (*types.Bundle, error) {
-	bundle := &types.Bundle{}
+func New(dataItems *[]data_item.DataItem) (*Bundle, error) {
+	bundle := &Bundle{}
 
 	headers, err := generateBundleHeader(dataItems)
 	if err != nil {
@@ -56,7 +56,7 @@ func NewBundle(dataItems *[]types.DataItem) (*types.Bundle, error) {
 	return bundle, nil
 }
 
-func ValidateBundle(data []byte) (bool, error) {
+func Verify(data []byte) (bool, error) {
 	// length must more than 32
 	if len(data) < 32 {
 		return false, errors.New("binary length must more than 32")

@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
+	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/tag"
 )
 
@@ -27,7 +28,7 @@ func New(data []byte, tags []tag.Tag, target string, quantity string, reward str
 	}
 }
 
-func GetTransactionDeepHash(tx *Transaction) ([]byte, error) {
+func GetSignatureData(tx *Transaction) ([]byte, error) {
 	if tx.Format != 2 {
 		return nil, errors.New("only type 2 transaction supported")
 	}
@@ -40,7 +41,7 @@ func GetTransactionDeepHash(tx *Transaction) ([]byte, error) {
 		return nil, err
 	}
 
-	rawTags, err := tag.Decode(tx.Tags)
+	rawTags, err := tag.Raw(tx.Tags)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +77,8 @@ func GetTransactionDeepHash(tx *Transaction) ([]byte, error) {
 	return signatureData, nil
 }
 
-func Verify(tx *Transaction) error {
-	signatureData, err := GetTransactionDeepHash(tx)
+func (tx *Transaction) Verify() error {
+	signatureData, err := GetSignatureData(tx)
 	if err != nil {
 		return err
 	}
@@ -90,4 +91,23 @@ func Verify(tx *Transaction) error {
 		return err
 	}
 	return crypto.Verify(signatureData, rawSignature, publicKey)
+}
+
+func (tx *Transaction) Sign(s *signer.Signer) error {
+	payload, err := GetSignatureData(tx)
+	if err != nil {
+		return err
+	}
+	rawSignature, err := crypto.Sign(payload, s.PrivateKey)
+	if err != nil {
+		return err
+	}
+	txId, err := crypto.SHA256(rawSignature)
+	if err != nil {
+		return err
+	}
+
+	tx.ID = crypto.Base64Encode(txId[:])
+	tx.Signature = crypto.Base64Encode(rawSignature)
+	return nil
 }

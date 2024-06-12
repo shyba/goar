@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/linkedin/goavro/v2"
+	"github.com/liteseed/goar/crypto"
 )
 
 const avroTagSchema = `
@@ -20,12 +21,7 @@ const avroTagSchema = `
 	}
 }`
 
-type Tag struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-func decodeAvro(data []byte) ([]Tag, error) {
+func fromAvro(data []byte) ([]Tag, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -45,7 +41,7 @@ func decodeAvro(data []byte) ([]Tag, error) {
 	return tags, err
 }
 
-func encodeAvro(tags []Tag) ([]byte, error) {
+func toAvro(tags []Tag) ([]byte, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -66,7 +62,7 @@ func encodeAvro(tags []Tag) ([]byte, error) {
 
 func Decode(tags []Tag) ([]byte, error) {
 	if len(tags) > 0 {
-		data, err := encodeAvro(tags)
+		data, err := toAvro(tags)
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +87,7 @@ func Encode(data []byte, startAt int) ([]Tag, int, error) {
 		bytesDataEnd := numberOfTagBytesEnd + numberOfTagBytes
 		bytesData := data[bytesDataStart:bytesDataEnd]
 
-		tags, err := decodeAvro(bytesData)
+		tags, err := fromAvro(bytesData)
 		if err != nil {
 			return nil, tagsEnd, err
 		}
@@ -99,4 +95,24 @@ func Encode(data []byte, startAt int) ([]Tag, int, error) {
 		return tags, tagsEnd, nil
 	}
 	return tags, tagsEnd, nil
+}
+
+func Raw(tags []Tag) ([][]byte, error) {
+	var data [][]byte
+	if len(tags) > 0 {
+		for _, tag := range tags {
+			name, err := crypto.Base64Decode(tag.Name)
+			if err != nil {
+				return nil, err
+			}
+			value, err := crypto.Base64Decode(tag.Value)
+			if err != nil {
+				return nil, err
+			}
+			data = append(data, name)
+			data = append(data, value)
+		}
+
+	}
+	return data, nil
 }

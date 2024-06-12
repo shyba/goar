@@ -44,28 +44,36 @@ func FromJWK(jwk []byte, gateway string) (*Wallet, error) {
 }
 
 func (w *Wallet) SignTransaction(tx *transaction.Transaction) error {
-	anchor, err := w.Client.GetLastTransactionID(w.Signer.Address)
+	tx.Owner = w.Signer.Owner()
+
+	anchor, err := w.Client.GetTransactionAnchor()
 	if err != nil {
 		return err
 	}
 	tx.LastTx = anchor
-	tx.Owner = w.Signer.Owner()
-	if err = w.Signer.SignTransaction(tx); err != nil {
+
+	reward, err := w.Client.GetTransactionPrice(len(tx.Data), "")
+	if err != nil {
+		return err
+	}
+	tx.Reward = reward
+	
+	if err = tx.Sign(w.Signer); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (w *Wallet) SendTransaction(t *transaction.Transaction) (*transaction.Transaction, error) {
-	if t.ID == "" || t.Signature == "" {
+func (w *Wallet) SendTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
+	if tx.ID == "" || tx.Signature == "" {
 		return nil, errors.New("transaction not signed")
 	}
-	tu, err := uploader.New(w.Client, t)
+	tu, err := uploader.New(w.Client, tx)
 	if err != nil {
 		return nil, err
 	}
 	if err = tu.PostTransaction(); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return tx, nil
 }

@@ -1,11 +1,9 @@
-package tx
+package data_item
 
 import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-
-	"github.com/liteseed/goar/types"
 )
 
 const (
@@ -71,34 +69,4 @@ func getSignatureMetadata(data []byte) (SignatureType int, SignatureLength int, 
 	PublicKeyLength = signatureMeta.PublicKeyLength
 	err = nil
 	return
-}
-
-func generateBundleHeader(d *[]types.DataItem) (*[]types.BundleHeader, error) {
-	headers := []types.BundleHeader{}
-
-	for _, dataItem := range *d {
-		idBytes, err := base64.RawURLEncoding.DecodeString(dataItem.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		id := int(binary.LittleEndian.Uint16(idBytes))
-		size := len(dataItem.Raw)
-		raw := make([]byte, 64)
-		binary.LittleEndian.PutUint16(raw, uint16(size))
-		binary.LittleEndian.AppendUint16(raw, uint16(id))
-		headers = append(headers, types.BundleHeader{ID: id, Size: size, Raw: raw})
-	}
-	return &headers, nil
-}
-
-func decodeBundleHeader(data *[]byte) (*[]types.BundleHeader, int) {
-	N := int(binary.LittleEndian.Uint32((*data)[:32]))
-	headers := []types.BundleHeader{}
-	for i := 32; i < 32+64*N; i += 64 {
-		size := int(binary.LittleEndian.Uint16((*data)[i : i+32]))
-		id := int(binary.LittleEndian.Uint16((*data)[i+32 : i+64]))
-		headers = append(headers, types.BundleHeader{ID: id, Size: size})
-	}
-	return &headers, N
 }
