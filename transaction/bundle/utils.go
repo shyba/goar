@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 
-	"github.com/liteseed/goar/data_item"
+	"github.com/liteseed/goar/transaction/data_item"
 )
 
 const (

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/liteseed/goar/data_item"
+	"github.com/liteseed/goar/transaction/data_item"
 	"github.com/stretchr/testify/assert"
 )
 

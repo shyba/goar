@@ -15,13 +15,13 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
-func New(rawData []byte, target string, anchor string, tags []tag.Tag) (*DataItem, error) {
+func New(rawData []byte, target string, anchor string, tags []tag.Tag) *DataItem {
 	return &DataItem{
 		Target: target,
 		Anchor: anchor,
 		Tags:   tags,
 		Data:   crypto.Base64Encode(rawData),
-	}, nil
+	}
 }
 
 // Decode a DataItem from bytes

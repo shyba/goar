@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/data_item"
+	"github.com/liteseed/goar/transaction/data_item"
 )
 
 func Decode(data []byte) (*Bundle, error) {
@@ -55,6 +55,7 @@ func New(dataItems *[]data_item.DataItem) (*Bundle, error) {
 	bundle.RawData = crypto.Base64Encode(append(sizeBytes, append(headersBytes, dataItemsBytes...)...))
 	return bundle, nil
 }
+
 
 func Verify(data []byte) (bool, error) {
 	// length must more than 32

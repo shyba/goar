@@ -18,7 +18,7 @@ func TestDecode(t *testing.T) {
 		tags := []tag.Tag{}
 		anchor := ""
 		target := ""
-		a, err := New([]byte(data), target, anchor, tags)
+		a := New([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
 
 		err = a.Sign(s)
@@ -42,7 +42,7 @@ func TestDecode(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		a, err := New([]byte(data), target, anchor, tags)
+		a := New([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
 
 		err = a.Sign(s)
@@ -90,7 +90,7 @@ func TestNew(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		dataItem, err := New([]byte(data), target, anchor, tags)
+		dataItem := New([]byte(data), target, anchor, tags)
 		assert.Equal(t, "", dataItem.Owner)
 		assert.Equal(t, target, dataItem.Target)
 		assert.Equal(t, anchor, dataItem.Anchor)
@@ -116,7 +116,7 @@ func TestNew(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		dataItem, err := New([]byte(data), target, anchor, tags)
+		dataItem := New([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
 		err = dataItem.Sign(s)
 		assert.NoError(t, err)
@@ -138,7 +138,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := ""
 		target := ""
 
-		dataItem, err := New([]byte(data), target, anchor, tags)
+		dataItem := New([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
 
 		err = dataItem.Sign(s)
@@ -156,7 +156,7 @@ func TestVerifyDataItem(t *testing.T) {
 		anchor := "thisSentenceIs32BytesLongTrustMe"
 		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
 
-		dataItem, err := New([]byte(data), target, anchor, tags)
+		dataItem := New([]byte(data), target, anchor, tags)
 		assert.NoError(t, err)
 
 		err = dataItem.Sign(s)
