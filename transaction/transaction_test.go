@@ -13,7 +13,7 @@ func TestSign(t *testing.T) {
 	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 
-	tx := New(data, nil, "", "0", "0")
+	tx := New(data, "", "0", nil)
 	assert.NoError(t, err)
 
 	t.Run("Sign", func(t *testing.T) {

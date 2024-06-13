@@ -21,7 +21,7 @@ func mine(t *testing.T, c *client.Client) {
 
 func createTransaction(t *testing.T, w *Wallet) *transaction.Transaction {
 	data := []byte{1, 2, 3}
-	tx := transaction.New(data, nil, "", "0", "0")
+	tx := transaction.New(data, "", "0", nil)
 
 	tx.Owner = w.Signer.Owner()
 
@@ -45,7 +45,7 @@ func TestSignTransaction(t *testing.T) {
 	data := []byte{1, 2, 3}
 
 	t.Run("Sign", func(t *testing.T) {
-		tx := transaction.New(data, nil, "", "0", "0")
+		tx := transaction.New(data, "", "0", nil)
 		tx, err = w.SignTransaction(tx)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tx.ID)

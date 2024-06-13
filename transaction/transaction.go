@@ -8,22 +8,18 @@ import (
 	"github.com/liteseed/goar/tag"
 )
 
-func New(data []byte, tags []tag.Tag, target string, quantity string, reward string) *Transaction {
+func New(data []byte, target string, quantity string, tags []tag.Tag) *Transaction {
 	if tags == nil {
 		tags = []tag.Tag{}
 	}
 	if quantity == "" {
 		quantity = "0"
 	}
-	if reward == "" {
-		reward = "0"
-	}
 	return &Transaction{
 		Format:   2,
 		Data:     data,
 		Target:   target,
 		Quantity: quantity,
-		Reward:   reward,
 		Tags:     tags,
 	}
 }

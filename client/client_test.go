@@ -33,7 +33,7 @@ func createTransaction(t *testing.T, c *Client) *transaction.Transaction {
 
 	mint(t, c, s.Address)
 
-	tx := transaction.New(data, nil, "", "0", "0")
+	tx := transaction.New(data, "", "0", nil)
 	assert.NoError(t, err)
 
 	tx.Owner = s.Owner()
@@ -118,7 +118,7 @@ func TestSubmitTransaction(t *testing.T) {
 
 	mint(t, c, s.Address)
 
-	tx := transaction.New(data, nil, "", "0", "0")
+	tx := transaction.New(data, "", "0", nil)
 	assert.NoError(t, err)
 
 	tx.Owner = s.Owner()
