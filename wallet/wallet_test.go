@@ -9,7 +9,7 @@ import (
 )
 
 func mint(t *testing.T, c *client.Client, address string) {
-	_, err := c.Client.Get(c.Gateway + "/mint/" + address + "/10000")
+	_, err := c.Client.Get(c.Gateway + "/mint/" + address + "/10000000000")
 	assert.NoError(t, err)
 	mine(t, c)
 }
@@ -33,14 +33,8 @@ func createTransaction(t *testing.T, w *Wallet) *transaction.Transaction {
 	assert.NoError(t, err)
 	tx.Reward = reward
 
-	mint(t, w.Client, w.Signer.Address)
-
-	err = tx.Sign(w.Signer)
+	_, err = w.SignTransaction(tx)
 	assert.NoError(t, err)
-	_, err = w.Client.SubmitTransaction(tx)
-	assert.NoError(t, err)
-	mine(t, w.Client)
-
 	return tx
 }
 
@@ -51,7 +45,6 @@ func TestSignTransaction(t *testing.T) {
 	data := []byte{1, 2, 3}
 
 	t.Run("Sign", func(t *testing.T) {
-
 		tx := transaction.New(data, nil, "", "0", "0")
 		tx, err = w.SignTransaction(tx)
 		assert.NoError(t, err)
@@ -64,10 +57,13 @@ func TestSendTransaction(t *testing.T) {
 	w, err := FromPath("../test/signer.json", "http://localhost:1984")
 	assert.NoError(t, err)
 
+	mint(t, w.Client, w.Signer.Address)
 	tx := createTransaction(t, w)
 
 	t.Run("Sent", func(t *testing.T) {
 		err = w.SendTransaction(tx)
+		mine(t, w.Client)
+
 		assert.NoError(t, err)
 	})
 

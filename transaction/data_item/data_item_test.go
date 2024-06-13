@@ -11,7 +11,7 @@ import (
 )
 
 func TestDecode(t *testing.T) {
-	s, err := signer.FromPath("../test/signer.json")
+	s, err := signer.FromPath("../../test/signer.json")
 	assert.NoError(t, err)
 	t.Run("Decode - New empty test data item", func(t *testing.T) {
 		data := ""
@@ -57,7 +57,7 @@ func TestDecode(t *testing.T) {
 		assert.Equal(t, dataItem.Data, base64.RawURLEncoding.EncodeToString([]byte(data)))
 	})
 	t.Run("Decode - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("../test/stubs/1115BDataItem")
+		data, err := os.ReadFile("../../test/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := Decode(data)
@@ -81,7 +81,7 @@ func TestDecode(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	s, err := signer.FromPath("../test/signer.json")
+	s, err := signer.FromPath("../../test/signer.json")
 	assert.NoError(t, err)
 
 	t.Run("New - New empty test data item", func(t *testing.T) {
@@ -129,7 +129,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestVerifyDataItem(t *testing.T) {
-	s, err := signer.FromPath("../test/signer.json")
+	s, err := signer.FromPath("../../test/signer.json")
 	assert.NoError(t, err)
 
 	t.Run("Verify - Empty test data item", func(t *testing.T) {
@@ -166,7 +166,7 @@ func TestVerifyDataItem(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run("Verify - Stub", func(t *testing.T) {
-		data, err := os.ReadFile("../test/stubs/1115BDataItem")
+		data, err := os.ReadFile("../../test/stubs/1115BDataItem")
 		assert.NoError(t, err)
 
 		dataItem, err := Decode(data)

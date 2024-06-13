@@ -10,7 +10,7 @@ import (
 )
 
 func TestDecodeBundleHeader(t *testing.T) {
-	data, err := os.ReadFile("../test/stubs/bundleHeader")
+	data, err := os.ReadFile("../../test/stubs/bundleHeader")
 	if err != nil {
 		log.Fatal(err)
 	}

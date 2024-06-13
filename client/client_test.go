@@ -11,7 +11,7 @@ import (
 )
 
 func mint(t *testing.T, c *Client, address string) {
-	res, err := c.get("mint/" + address + "/10000")
+	res, err := c.get("mint/" + address + "/1000000000000")
 	if err != nil {
 		panic(0)
 	}
@@ -30,6 +30,9 @@ func createTransaction(t *testing.T, c *Client) *transaction.Transaction {
 	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 	data := []byte{1, 2, 3}
+
+	mint(t, c, s.Address)
+
 	tx := transaction.New(data, nil, "", "0", "0")
 	assert.NoError(t, err)
 
@@ -42,7 +45,6 @@ func createTransaction(t *testing.T, c *Client) *transaction.Transaction {
 	reward, err := c.GetTransactionPrice(len(data), "")
 	assert.NoError(t, err)
 	tx.Reward = reward
-	mint(t, c, s.Address)
 
 	err = tx.Sign(s)
 	assert.NoError(t, err)
