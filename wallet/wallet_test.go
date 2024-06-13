@@ -37,7 +37,7 @@ func createTransaction(t *testing.T, w *Wallet) *transaction.Transaction {
 
 	err = tx.Sign(w.Signer)
 	assert.NoError(t, err)
-	_, _, err = w.Client.SubmitTransaction(tx)
+	_, err = w.Client.SubmitTransaction(tx)
 	assert.NoError(t, err)
 	mine(t, w.Client)
 

@@ -46,7 +46,7 @@ func createTransaction(t *testing.T, c *Client) *transaction.Transaction {
 
 	err = tx.Sign(s)
 	assert.NoError(t, err)
-	_, _, err = c.SubmitTransaction(tx)
+	_, err = c.SubmitTransaction(tx)
 	assert.NoError(t, err)
 	mine(c)
 
@@ -133,7 +133,7 @@ func TestSubmitTransaction(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Post", func(t *testing.T) {
-		_, code, err := c.SubmitTransaction(tx)
+		code, err := c.SubmitTransaction(tx)
 		assert.Equal(t, 200, code)
 		assert.NoError(t, err)
 	})

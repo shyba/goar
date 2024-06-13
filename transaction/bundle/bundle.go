@@ -3,7 +3,6 @@ package bundle
 import (
 	"errors"
 
-	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/transaction/data_item"
 )
 
@@ -15,7 +14,7 @@ func Decode(data []byte) (*Bundle, error) {
 	headers, N := decodeBundleHeader(&data)
 	bundle := &Bundle{
 		Items:   make([]data_item.DataItem, N),
-		RawData: crypto.Base64Encode(data),
+		RawData: data,
 	}
 	bundleStart := 32 + 64*N
 	for i := 0; i < N; i++ {
@@ -52,10 +51,9 @@ func New(dataItems *[]data_item.DataItem) (*Bundle, error) {
 		dataItemsBytes = append(dataItemsBytes, (*headers)[i].Raw...)
 	}
 
-	bundle.RawData = crypto.Base64Encode(append(sizeBytes, append(headersBytes, dataItemsBytes...)...))
+	bundle.RawData = append(sizeBytes, append(headersBytes, dataItemsBytes...)...)
 	return bundle, nil
 }
-
 
 func Verify(data []byte) (bool, error) {
 	// length must more than 32

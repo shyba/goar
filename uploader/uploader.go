@@ -60,7 +60,7 @@ func (tu *TransactionUploader) PostTransaction() error {
 	uploadInBody := tu.TotalChunks <= MAX_CHUNKS_IN_BODY
 	if uploadInBody {
 
-		_, code, err := tu.client.SubmitTransaction(tu.transaction)
+		code, err := tu.client.SubmitTransaction(tu.transaction)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func (tu *TransactionUploader) PostTransaction() error {
 		// Post transaction with no data
 		t := tu.transaction
 		t.Data = nil
-		_, code, err := tu.client.SubmitTransaction(t)
+		code, err := tu.client.SubmitTransaction(t)
 		if err != nil {
 			return err
 		}
@@ -123,16 +123,14 @@ func (tu *TransactionUploader) UploadChunk(chunkIndex int) error {
 		return err
 	}
 
-	body, statusCode, err := tu.client.UploadChunk(chunk)
+	code, err := tu.client.UploadChunk(chunk)
 	tu.LastRequestTimeEnd = time.Hour.Milliseconds()
-	tu.LastResponseStatus = statusCode
+	tu.LastResponseStatus = code
 
 	if tu.LastResponseStatus == 200 {
 		tu.ChunkIndex++
 	} else {
-		if body != nil {
-			tu.LastResponseError = string(body)
-		} else {
+		if err != nil {
 			tu.LastResponseError = err.Error()
 		}
 		if slices.Contains(FATAL_CHUNK_UPLOAD_ERRORS, tu.LastResponseError) {

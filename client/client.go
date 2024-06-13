@@ -3,7 +3,6 @@ package client
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -29,7 +28,6 @@ func (c *Client) GetTransactionByID(id string) (*transaction.Transaction, error)
 	if err != nil {
 		return nil, err
 	}
-	log.Println(string(body))
 	t := &transaction.Transaction{}
 	err = json.Unmarshal(body, t)
 	if err != nil {
@@ -86,18 +84,12 @@ func (c *Client) GetTransactionAnchor() (string, error) {
 	return string(body), nil
 }
 
-func (c *Client) SubmitTransaction(tx *transaction.Transaction) ([]byte, int, error) {
+func (c *Client) SubmitTransaction(tx *transaction.Transaction) (int, error) {
 	b, err := json.Marshal(tx)
 	if err != nil {
-		return nil, -1, err
+		return -1, err
 	}
-
-	body, statusCode, err := c.httpPost("tx", b)
-	if err != nil {
-		return nil, statusCode, err
-	}
-
-	return body, statusCode, nil
+	return c.post("tx", b)
 }
 
 func (c *Client) GetWalletBalance(address string) (string, error) {
@@ -155,15 +147,10 @@ func (c *Client) GetNetworkInfo() (*NetworkInfo, error) {
 	return &n, nil
 }
 
-func (c *Client) UploadChunk(chunk *transaction.GetChunkResult) ([]byte, int, error) {
+func (c *Client) UploadChunk(chunk *transaction.GetChunkResult) (int, error) {
 	b, err := json.Marshal(chunk)
 	if err != nil {
-		return nil, -1, err
+		return -1, err
 	}
-	body, statusCode, err := c.httpPost("tx", b)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	return body, statusCode, nil
+	return c.post("tx", b)
 }
