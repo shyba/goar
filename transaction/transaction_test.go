@@ -29,7 +29,8 @@ func TestSign(t *testing.T) {
 	})
 
 	t.Run("Sign with Tags", func(t *testing.T) {
-		tx := New(data, "", "0", []tag.Tag{{Name: "test", Value: "test"}, {Name: "test", Value: "test"}})
+		tags := &[]tag.Tag{{Name: "test", Value: "test"}, {Name: "test", Value: "1"}, {Name: "test", Value: "test"}}
+		tx := New(data, "", "0", tags)
 		assert.NoError(t, err)
 		tx.Owner = s.Owner()
 		tx.LastTx = "lqsw6xgaaunfs8h3d6n54ci1lgm2tmtqvz3wke9v9ygq64q8s68yz2jfq5xy4nec"
@@ -41,4 +42,5 @@ func TestSign(t *testing.T) {
 		err = tx.Verify()
 		assert.NoError(t, err)
 	})
+
 }

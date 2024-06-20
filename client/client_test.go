@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/liteseed/goar/signer"
+	"github.com/liteseed/goar/tag"
 	"github.com/liteseed/goar/transaction"
 	"github.com/stretchr/testify/assert"
 )
@@ -112,29 +113,114 @@ func TestGetTransactionAnchor(t *testing.T) {
 func TestSubmitTransaction(t *testing.T) {
 	c := New("http://localhost:1984")
 	data := []byte("test")
+	tags := &[]tag.Tag{{Name: "test", Value: "test"}, {Name: "test", Value: "test"}, {Name: "test", Value: "test"}}
 
 	s, err := signer.FromPath("../test/signer.json")
 	assert.NoError(t, err)
 
+	mine(c)
 	mint(t, c, s.Address)
 
-	tx := transaction.New(data, "", "0", nil)
-	assert.NoError(t, err)
+	t.Run("Post with Data", func(t *testing.T) {
+		tx := transaction.New(data, "", "0", nil)
+		assert.NoError(t, err)
 
-	tx.Owner = s.Owner()
+		tx.Owner = s.Owner()
 
-	anchor, err := c.GetTransactionAnchor()
-	assert.NoError(t, err)
-	tx.LastTx = anchor
+		anchor, err := c.GetTransactionAnchor()
+		assert.NoError(t, err)
+		tx.LastTx = anchor
 
-	reward, err := c.GetTransactionPrice(len(data), "")
-	assert.NoError(t, err)
-	tx.Reward = reward
+		reward, err := c.GetTransactionPrice(len(data), "")
+		assert.NoError(t, err)
+		tx.Reward = reward
 
-	err = tx.Sign(s)
-	assert.NoError(t, err)
+		err = tx.Sign(s)
+		assert.NoError(t, err)
+		code, err := c.SubmitTransaction(tx)
+		assert.Equal(t, 200, code)
+		assert.NoError(t, err)
+	})
 
-	t.Run("Post", func(t *testing.T) {
+	t.Run("Post with Data & Tags", func(t *testing.T) {
+		tx := transaction.New(data, "", "0", tags)
+		assert.NoError(t, err)
+
+		tx.Owner = s.Owner()
+
+		anchor, err := c.GetTransactionAnchor()
+		assert.NoError(t, err)
+		tx.LastTx = anchor
+
+		reward, err := c.GetTransactionPrice(len(data), "")
+		assert.NoError(t, err)
+		tx.Reward = reward
+
+		err = tx.Sign(s)
+		assert.NoError(t, err)
+		code, err := c.SubmitTransaction(tx)
+		assert.Equal(t, 200, code)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Post with Target & Quantity", func(t *testing.T) {
+		tx := transaction.New(nil, "Cbj95zDZBBhmyht6iFlEf7xmSCSVZGw436V6HWmm9Ek", "1000", nil)
+		assert.NoError(t, err)
+
+		tx.Owner = s.Owner()
+
+		anchor, err := c.GetTransactionAnchor()
+		assert.NoError(t, err)
+		tx.LastTx = anchor
+
+		reward, err := c.GetTransactionPrice(len(data), "")
+		assert.NoError(t, err)
+		tx.Reward = reward
+
+		err = tx.Sign(s)
+		assert.NoError(t, err)
+		code, err := c.SubmitTransaction(tx)
+		assert.Equal(t, 200, code)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Post with Target, Quantity, & Tags", func(t *testing.T) {
+		tx := transaction.New(nil, "Cbj95zDZBBhmyht6iFlEf7xmSCSVZGw436V6HWmm9Ek", "1000", tags)
+		assert.NoError(t, err)
+
+		tx.Owner = s.Owner()
+
+		anchor, err := c.GetTransactionAnchor()
+		assert.NoError(t, err)
+		tx.LastTx = anchor
+
+		reward, err := c.GetTransactionPrice(len(data), "")
+		assert.NoError(t, err)
+		tx.Reward = reward
+
+		err = tx.Sign(s)
+		assert.NoError(t, err)
+		code, err := c.SubmitTransaction(tx)
+		assert.Equal(t, 200, code)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Post with Everything", func(t *testing.T) {
+		tx := transaction.New(data, "Cbj95zDZBBhmyht6iFlEf7xmSCSVZGw436V6HWmm9Ek", "1000", tags)
+		assert.NoError(t, err)
+
+		tx.Owner = s.Owner()
+
+		anchor, err := c.GetTransactionAnchor()
+		assert.NoError(t, err)
+		tx.LastTx = anchor
+
+		reward, err := c.GetTransactionPrice(len(data), "")
+		assert.NoError(t, err)
+		tx.Reward = reward
+
+		err = tx.Sign(s)
+		assert.NoError(t, err)
 		code, err := c.SubmitTransaction(tx)
 		assert.Equal(t, 200, code)
 		assert.NoError(t, err)

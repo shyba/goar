@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"path"
 )
@@ -39,7 +40,7 @@ func (c *Client) post(_path string, payload []byte) (int, error) {
 	}
 
 	u.Path = path.Join(u.Path, _path)
-
+	log.Println(u.String())
 	resp, err := c.Client.Post(u.String(), "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return -1, err

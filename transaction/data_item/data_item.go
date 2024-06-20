@@ -15,7 +15,7 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
-func New(rawData []byte, target string, anchor string, tags []tag.Tag) *DataItem {
+func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataItem {
 	return &DataItem{
 		Target: target,
 		Anchor: anchor,
@@ -51,7 +51,7 @@ func Decode(raw []byte) (*DataItem, error) {
 	position := ownerEnd
 	target, position := getTarget(&raw, position)
 	anchor, position := getAnchor(&raw, position)
-	tags, position, err := tag.Encode(raw, position)
+	tags, position, err := tag.Deserialize(raw, position)
 	if err != nil {
 		return nil, err
 	}
@@ -100,11 +100,11 @@ func Verify(dataItem *DataItem) error {
 	}
 
 	// VERIFY TAGS
-	if len(dataItem.Tags) > MAX_TAGS {
+	if len(*dataItem.Tags) > MAX_TAGS {
 		return errors.New("invalid data item - tags cannot be more than 128")
 	}
 
-	for _, tag := range dataItem.Tags {
+	for _, tag := range *dataItem.Tags {
 		if len([]byte(tag.Name)) == 0 || len([]byte(tag.Name)) > MAX_TAG_KEY_LENGTH {
 			return errors.New("invalid data item - tag key too long")
 		}
@@ -119,7 +119,7 @@ func Verify(dataItem *DataItem) error {
 	return nil
 }
 
-func GetDataItemChunk(owner string, target string, anchor string, tags []tag.Tag, data string) ([]byte, error) {
+func GetDataItemChunk(owner string, target string, anchor string, tags *[]tag.Tag, data string) ([]byte, error) {
 	rawOwner, err := crypto.Base64Decode(owner)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func GetDataItemChunk(owner string, target string, anchor string, tags []tag.Tag
 	}
 	rawAnchor := []byte(anchor)
 
-	rawTags, err := tag.Decode(tags)
+	rawTags, err := tag.Serialize(tags)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func (dataItem *DataItem) Sign(s *signer.Signer) error {
 	}
 	rawAnchor := []byte(dataItem.Anchor)
 
-	rawTags, err := tag.Decode(dataItem.Tags)
+	rawTags, err := tag.Serialize(dataItem.Tags)
 	if err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func (dataItem *DataItem) Sign(s *signer.Signer) error {
 	}
 	raw = append(raw, rawAnchor...)
 	numberOfTags := make([]byte, 8)
-	binary.LittleEndian.PutUint16(numberOfTags, uint16(len(dataItem.Tags)))
+	binary.LittleEndian.PutUint16(numberOfTags, uint16(len(*dataItem.Tags)))
 	raw = append(raw, numberOfTags...)
 
 	tagsLength := make([]byte, 8)

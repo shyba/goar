@@ -9,7 +9,7 @@ type DataItem struct {
 	Owner         string    `json:"owner"`
 	Target        string    `json:"target"`
 	Anchor        string    `json:"anchor"`
-	Tags          []tag.Tag `json:"tags"`
+	Tags          *[]tag.Tag `json:"tags"`
 	Data          string    `json:"data"`
 	Raw           []byte
 }

@@ -8,9 +8,9 @@ import (
 	"github.com/liteseed/goar/tag"
 )
 
-func New(data []byte, target string, quantity string, tags []tag.Tag) *Transaction {
+func New(data []byte, target string, quantity string, tags *[]tag.Tag) *Transaction {
 	if tags == nil {
-		tags = []tag.Tag{}
+		tags = &[]tag.Tag{}
 	}
 	if quantity == "" {
 		quantity = "0"
@@ -20,7 +20,7 @@ func New(data []byte, target string, quantity string, tags []tag.Tag) *Transacti
 		Data:     data,
 		Target:   target,
 		Quantity: quantity,
-		Tags:     tags,
+		Tags:     tag.Encode(tags),
 	}
 }
 
@@ -37,10 +37,11 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 		return nil, err
 	}
 
-	rawTags, err := tag.Raw(tx.Tags)
+	rawTags, err := tag.Decode(tx.Tags)
 	if err != nil {
 		return nil, err
 	}
+
 	rawLastTx, err := crypto.Base64Decode(tx.LastTx)
 	if err != nil {
 		return nil, err

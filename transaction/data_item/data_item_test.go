@@ -15,7 +15,7 @@ func TestDecode(t *testing.T) {
 	assert.NoError(t, err)
 	t.Run("Decode - New empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tag.Tag{}
+		tags := &[]tag.Tag{}
 		anchor := ""
 		target := ""
 		a := New([]byte(data), target, anchor, tags)
@@ -35,7 +35,7 @@ func TestDecode(t *testing.T) {
 
 	t.Run("Decode - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tag.Tag{
+		tags := &[]tag.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}
@@ -86,7 +86,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("New - New empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tag.Tag{}
+		tags := &[]tag.Tag{}
 		anchor := ""
 		target := ""
 
@@ -109,7 +109,7 @@ func TestNew(t *testing.T) {
 	})
 	t.Run("New - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tag.Tag{
+		tags := &[]tag.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}
@@ -134,7 +134,7 @@ func TestVerifyDataItem(t *testing.T) {
 
 	t.Run("Verify - Empty test data item", func(t *testing.T) {
 		data := ""
-		tags := []tag.Tag{}
+		tags := &[]tag.Tag{}
 		anchor := ""
 		target := ""
 
@@ -149,7 +149,7 @@ func TestVerifyDataItem(t *testing.T) {
 	})
 	t.Run("Verify - data, tags, anchor, target", func(t *testing.T) {
 		data := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{};':\",./<>?`~"
-		tags := []tag.Tag{
+		tags := &[]tag.Tag{
 			{Name: "tag1", Value: "value1"},
 			{Name: "tag2", Value: "value2"},
 		}

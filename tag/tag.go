@@ -21,7 +21,7 @@ const avroTagSchema = `
 	}
 }`
 
-func fromAvro(data []byte) ([]Tag, error) {
+func fromAvro(data []byte) (*[]Tag, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -38,10 +38,10 @@ func fromAvro(data []byte) ([]Tag, error) {
 		tag := v.(map[string]any)
 		tags = append(tags, Tag{Name: string(tag["name"].([]byte)), Value: string(tag["value"].([]byte))})
 	}
-	return tags, err
+	return &tags, err
 }
 
-func toAvro(tags []Tag) ([]byte, error) {
+func toAvro(tags *[]Tag) ([]byte, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func toAvro(tags []Tag) ([]byte, error) {
 
 	avroTags := []map[string]any{}
 
-	for _, tag := range tags {
+	for _, tag := range *tags {
 		m := map[string]any{"name": []byte(tag.Name), "value": []byte(tag.Value)}
 		avroTags = append(avroTags, m)
 	}
@@ -60,8 +60,8 @@ func toAvro(tags []Tag) ([]byte, error) {
 	return data, err
 }
 
-func Decode(tags []Tag) ([]byte, error) {
-	if len(tags) > 0 {
+func Serialize(tags *[]Tag) ([]byte, error) {
+	if len(*tags) > 0 {
 		data, err := toAvro(tags)
 		if err != nil {
 			return nil, err
@@ -72,8 +72,8 @@ func Decode(tags []Tag) ([]byte, error) {
 	return nil, nil
 }
 
-func Encode(data []byte, startAt int) ([]Tag, int, error) {
-	tags := []Tag{}
+func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
+	tags := &[]Tag{}
 	tagsEnd := startAt + 8 + 8
 	numberOfTags := int(binary.LittleEndian.Uint16(data[startAt : startAt+8]))
 	numberOfTagBytesStart := startAt + 8
@@ -97,22 +97,29 @@ func Encode(data []byte, startAt int) ([]Tag, int, error) {
 	return tags, tagsEnd, nil
 }
 
-func Raw(tags []Tag) ([][]byte, error) {
-	var data [][]byte
-	if len(tags) > 0 {
-		for _, tag := range tags {
-			name, err := crypto.Base64Decode(tag.Name)
-			if err != nil {
-				return nil, err
-			}
-			value, err := crypto.Base64Decode(tag.Value)
-			if err != nil {
-				return nil, err
-			}
-			data = append(data, name)
-			data = append(data, value)
+func Decode(tags *[]Tag) ([][][]byte, error) {
+	if len(*tags) == 0 {
+		return nil, nil
+	}
+	data := make([][][]byte, 0)
+	for _, tag := range *tags {
+		name, err := crypto.Base64Decode(tag.Name)
+		if err != nil {
+			return nil, err
 		}
-
+		value, err := crypto.Base64Decode(tag.Value)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, [][]byte{name, value})
 	}
 	return data, nil
+}
+
+func Encode(tags *[]Tag) *[]Tag {
+	result := []Tag{}
+	for _, tag := range *tags {
+		result = append(result, Tag{Name: crypto.Base64Encode([]byte(tag.Name)), Value: crypto.Base64Encode([]byte(tag.Value))})
+	}
+	return &result
 }

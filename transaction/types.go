@@ -20,9 +20,9 @@ type Proof struct {
 }
 
 type ChunkData struct {
-	DataRoot string  `json:"data_root"`
-	Chunks   []Chunk `json:"chunks"`
-	Proofs   []Proof `json:"proofs"`
+	DataRoot string
+	Chunks   []Chunk
+	Proofs   []Proof
 }
 
 type NodeType = string
@@ -37,18 +37,18 @@ type Node struct {
 }
 
 type Transaction struct {
-	Format    int       `json:"format"`
-	ID        string    `json:"id"`
-	LastTx    string    `json:"last_tx"`
-	Owner     string    `json:"owner"`
-	Tags      []tag.Tag `json:"tags"`
-	Target    string    `json:"target"`
-	Quantity  string    `json:"quantity"`
-	Data      []byte    `json:"data"`
-	Reward    string    `json:"reward"`
-	Signature string    `json:"signature"`
-	DataSize  string    `json:"data_size"`
-	DataRoot  string    `json:"data_root"`
+	Format    int        `json:"format"`
+	ID        string     `json:"id"`
+	LastTx    string     `json:"last_tx"`
+	Owner     string     `json:"owner"`
+	Tags      *[]tag.Tag `json:"tags"`
+	Target    string     `json:"target"`
+	Quantity  string     `json:"quantity"`
+	Data      []byte     `json:"data"`
+	Reward    string     `json:"reward"`
+	Signature string     `json:"signature"`
+	DataSize  string     `json:"data_size"`
+	DataRoot  string     `json:"data_root"`
 
 	ChunkData *ChunkData
 }
@@ -62,7 +62,6 @@ type TransactionChunk struct {
 	DataPath string `json:"data_path"`
 	TxPath   string `json:"tx_path"`
 }
-
 
 type GetChunkResult struct {
 	DataRoot string `json:"data_root"`

@@ -46,7 +46,7 @@ func FromJWK(jwk []byte, gateway string) (*Wallet, error) {
 	}, nil
 }
 
-func (w *Wallet) CreateTransaction(data []byte, target string, quantity string, tags []tag.Tag) *transaction.Transaction {
+func (w *Wallet) CreateTransaction(data []byte, target string, quantity string, tags *[]tag.Tag) *transaction.Transaction {
 	return transaction.New(data, target, quantity, tags)
 }
 
@@ -85,7 +85,7 @@ func (w *Wallet) SendTransaction(tx *transaction.Transaction) error {
 	return nil
 }
 
-func (w *Wallet) CreateDataItem(data []byte, target string, anchor string, tags []tag.Tag) *data_item.DataItem {
+func (w *Wallet) CreateDataItem(data []byte, target string, anchor string, tags *[]tag.Tag) *data_item.DataItem {
 	return data_item.New(data, target, anchor, tags)
 }
 
