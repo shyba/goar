@@ -69,7 +69,7 @@ func TestDecode(t *testing.T) {
 		assert.Equal(t, dataItem.Anchor, "")
 		assert.ElementsMatch(
 			t,
-			dataItem.Tags,
+			*dataItem.Tags,
 			[]tag.Tag{
 				{Name: "Content-Type", Value: "text/plain"},
 				{Name: "App-Name", Value: "ArDrive-CLI"},
