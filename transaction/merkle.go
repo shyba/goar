@@ -54,7 +54,7 @@ func generateTransactionChunks(data []byte) (*ChunkData, error) {
 		return nil, err
 	}
 
-	root, err := buildLayer(leaves, 0) 
+	root, err := buildLayer(leaves, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +218,7 @@ func generateProofs(node *Node, proof []byte, depth int) []Proof {
 }
 
 func validatePath() bool {
+	// TODO: Implement
 	return false
 }
 
