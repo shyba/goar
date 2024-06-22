@@ -6,6 +6,7 @@ import (
 	"reflect"
 )
 
+// DeepHash is used to hash raw transaction data for signing using the signer.
 func DeepHash(data any) [48]byte {
 	if typeof(data) == "[]uint8" {
 		tag := append([]byte("blob"), []byte(fmt.Sprint(len(data.([]byte))))...)

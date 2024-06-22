@@ -4,6 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/liteseed/goar/crypto"
+	"github.com/liteseed/goar/tag"
 )
 
 const (
@@ -69,4 +72,40 @@ func getSignatureMetadata(data []byte) (SignatureType int, SignatureLength int, 
 	PublicKeyLength = signatureMeta.PublicKeyLength
 	err = nil
 	return
+}
+
+// This function assembles DataItem data in a format specified by ANS-104 and hashes is it using DeepHash
+func (d *DataItem) getDataItemChunk() ([]byte, error) {
+	rawOwner, err := crypto.Base64Decode(d.Owner)
+	if err != nil {
+		return nil, err
+	}
+
+	rawTarget, err := crypto.Base64Decode(d.Target)
+	if err != nil {
+		return nil, err
+	}
+	rawAnchor := []byte(d.Anchor)
+
+	rawTags, err := tag.Serialize(d.Tags)
+	if err != nil {
+		return nil, err
+	}
+	rawData, err := crypto.Base64Decode(d.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	chunks := [][]byte{
+		[]byte("dataitem"),
+		[]byte("1"),
+		[]byte("1"),
+		rawOwner,
+		rawTarget,
+		rawAnchor,
+		rawTags,
+		rawData,
+	}
+	deepHashChunk := crypto.DeepHash(chunks)
+	return deepHashChunk[:], nil
 }

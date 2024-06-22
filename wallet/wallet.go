@@ -19,11 +19,14 @@ type Wallet struct {
 }
 
 func New(gateway string) (w *Wallet, err error) {
-	jwk, err := signer.New()
+	signer, err := signer.New()
 	if err != nil {
 		return nil, err
 	}
-	return FromJWK(jwk, gateway)
+	return &Wallet{
+		Client: client.New(gateway),
+		Signer: signer,
+	}, nil
 }
 
 func FromPath(path string, gateway string) (*Wallet, error) {

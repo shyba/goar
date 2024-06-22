@@ -15,6 +15,8 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
+// Create a new DataItem
+// Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataItem {
 	return &DataItem{
 		Target: target,
@@ -70,92 +72,9 @@ func Decode(raw []byte) (*DataItem, error) {
 	}, nil
 }
 
-func Verify(dataItem *DataItem) error {
-	// Verify ID
-	rawSignature, err := crypto.Base64Decode(dataItem.Signature)
-	if err != nil {
-		return err
-	}
-	rawId, err := crypto.SHA256(rawSignature)
-	if err != nil {
-		return err
-	}
-	id := crypto.Base64Encode(rawId)
-	if id != dataItem.ID {
-		return errors.New("invalid data item - signature and id don't match")
-	}
-
-	chunks, err := GetDataItemChunk(dataItem.Owner, dataItem.Target, dataItem.Anchor, dataItem.Tags, dataItem.Data)
-	if err != nil {
-		return err
-	}
-
-	publicKey, err := crypto.GetPublicKeyFromOwner(dataItem.Owner)
-	if err != nil {
-		return err
-	}
-	err = crypto.Verify(chunks, rawSignature, publicKey)
-	if err != nil {
-		return err
-	}
-
-	// VERIFY TAGS
-	if len(*dataItem.Tags) > MAX_TAGS {
-		return errors.New("invalid data item - tags cannot be more than 128")
-	}
-
-	for _, tag := range *dataItem.Tags {
-		if len([]byte(tag.Name)) == 0 || len([]byte(tag.Name)) > MAX_TAG_KEY_LENGTH {
-			return errors.New("invalid data item - tag key too long")
-		}
-		if len([]byte(tag.Value)) == 0 || len([]byte(tag.Value)) > MAX_TAG_VALUE_LENGTH {
-			return errors.New("invalid data item - tag value too long")
-		}
-	}
-
-	if len([]byte(dataItem.Anchor)) > 32 {
-		return errors.New("invalid data item - anchor should be 32 bytes")
-	}
-	return nil
-}
-
-func GetDataItemChunk(owner string, target string, anchor string, tags *[]tag.Tag, data string) ([]byte, error) {
-	rawOwner, err := crypto.Base64Decode(owner)
-	if err != nil {
-		return nil, err
-	}
-
-	rawTarget, err := crypto.Base64Decode(target)
-	if err != nil {
-		return nil, err
-	}
-	rawAnchor := []byte(anchor)
-
-	rawTags, err := tag.Serialize(tags)
-	if err != nil {
-		return nil, err
-	}
-	rawData, err := crypto.Base64Decode(data)
-	if err != nil {
-		return nil, err
-	}
-
-	chunks := [][]byte{
-		[]byte("dataitem"),
-		[]byte("1"),
-		[]byte("1"),
-		rawOwner,
-		rawTarget,
-		rawAnchor,
-		rawTags,
-		rawData,
-	}
-	deepHashChunk := crypto.DeepHash(chunks)
-	return deepHashChunk[:], nil
-}
-
-func (dataItem *DataItem) Sign(s *signer.Signer) error {
-	deepHashChunk, err := GetDataItemChunk(s.Owner(), dataItem.Target, dataItem.Anchor, dataItem.Tags, dataItem.Data)
+func (d *DataItem) Sign(s *signer.Signer) error {
+	d.Owner = s.Owner()
+	deepHashChunk, err := d.getDataItemChunk()
 	if err != nil {
 		return err
 	}
@@ -170,17 +89,17 @@ func (dataItem *DataItem) Sign(s *signer.Signer) error {
 		return err
 	}
 
-	rawTarget, err := crypto.Base64Decode(dataItem.Target)
+	rawTarget, err := crypto.Base64Decode(d.Target)
 	if err != nil {
 		return err
 	}
-	rawAnchor := []byte(dataItem.Anchor)
+	rawAnchor := []byte(d.Anchor)
 
-	rawTags, err := tag.Serialize(dataItem.Tags)
+	rawTags, err := tag.Serialize(d.Tags)
 	if err != nil {
 		return err
 	}
-	rawData, err := crypto.Base64Decode(dataItem.Data)
+	rawData, err := crypto.Base64Decode(d.Data)
 	if err != nil {
 		return err
 	}
@@ -190,21 +109,21 @@ func (dataItem *DataItem) Sign(s *signer.Signer) error {
 	raw = append(raw, rawSignature...)
 	raw = append(raw, rawOwner...)
 
-	if dataItem.Target == "" {
+	if d.Target == "" {
 		raw = append(raw, 0)
 	} else {
 		raw = append(raw, 1)
 	}
 	raw = append(raw, rawTarget...)
 
-	if dataItem.Anchor == "" {
+	if d.Anchor == "" {
 		raw = append(raw, 0)
 	} else {
 		raw = append(raw, 1)
 	}
 	raw = append(raw, rawAnchor...)
 	numberOfTags := make([]byte, 8)
-	binary.LittleEndian.PutUint16(numberOfTags, uint16(len(*dataItem.Tags)))
+	binary.LittleEndian.PutUint16(numberOfTags, uint16(len(*d.Tags)))
 	raw = append(raw, numberOfTags...)
 
 	tagsLength := make([]byte, 8)
@@ -217,9 +136,58 @@ func (dataItem *DataItem) Sign(s *signer.Signer) error {
 		return err
 	}
 
-	dataItem.Owner = s.Owner()
-	dataItem.Signature = crypto.Base64Encode(rawSignature)
-	dataItem.ID = crypto.Base64Encode(rawID)
-	dataItem.Raw = raw
+	d.Owner = s.Owner()
+	d.Signature = crypto.Base64Encode(rawSignature)
+	d.ID = crypto.Base64Encode(rawID)
+	d.Raw = raw
+	return nil
+}
+
+func (d *DataItem) Verify() error {
+	// Verify ID
+	rawSignature, err := crypto.Base64Decode(d.Signature)
+	if err != nil {
+		return err
+	}
+	rawId, err := crypto.SHA256(rawSignature)
+	if err != nil {
+		return err
+	}
+	id := crypto.Base64Encode(rawId)
+	if id != d.ID {
+		return errors.New("invalid data item - signature and id don't match")
+	}
+
+	chunks, err := d.getDataItemChunk()
+	if err != nil {
+		return err
+	}
+
+	publicKey, err := crypto.GetPublicKeyFromOwner(d.Owner)
+	if err != nil {
+		return err
+	}
+	err = crypto.Verify(chunks, rawSignature, publicKey)
+	if err != nil {
+		return err
+	}
+
+	// VERIFY TAGS
+	if len(*d.Tags) > MAX_TAGS {
+		return errors.New("invalid data item - tags cannot be more than 128")
+	}
+
+	for _, tag := range *d.Tags {
+		if len([]byte(tag.Name)) == 0 || len([]byte(tag.Name)) > MAX_TAG_KEY_LENGTH {
+			return errors.New("invalid data item - tag key too long")
+		}
+		if len([]byte(tag.Value)) == 0 || len([]byte(tag.Value)) > MAX_TAG_VALUE_LENGTH {
+			return errors.New("invalid data item - tag value too long")
+		}
+	}
+
+	if len([]byte(d.Anchor)) > 32 {
+		return errors.New("invalid data item - anchor should be 32 bytes")
+	}
 	return nil
 }

@@ -7,42 +7,6 @@ import (
 	"github.com/liteseed/goar/transaction/data_item"
 )
 
-const (
-	Arweave  = 1
-	ED25519  = 2
-	Ethereum = 3
-	Solana   = 4
-)
-
-type SignatureMeta struct {
-	SignatureLength int
-	PublicKeyLength int
-	Name            string
-}
-
-var SignatureConfig = map[int]SignatureMeta{
-	Arweave: {
-		SignatureLength: 512,
-		PublicKeyLength: 512,
-		Name:            "arweave",
-	},
-	ED25519: {
-		SignatureLength: 64,
-		PublicKeyLength: 32,
-		Name:            "ed25519",
-	},
-	Ethereum: {
-		SignatureLength: 65,
-		PublicKeyLength: 65,
-		Name:            "ethereum",
-	},
-	Solana: {
-		SignatureLength: 64,
-		PublicKeyLength: 32,
-		Name:            "solana",
-	},
-}
-
 func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
 	headers := []BundleHeader{}
 

@@ -1,3 +1,4 @@
+// Package provides primitives for generating tags for transaction
 package tag
 
 import (
@@ -60,6 +61,8 @@ func toAvro(tags *[]Tag) ([]byte, error) {
 	return data, err
 }
 
+// Converts readable Tag data into avro-encoded byte data
+// Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Serialize(tags *[]Tag) ([]byte, error) {
 	if len(*tags) > 0 {
 		data, err := toAvro(tags)
@@ -72,6 +75,8 @@ func Serialize(tags *[]Tag) ([]byte, error) {
 	return nil, nil
 }
 
+// Converts avro-encoded byte data into readable Tag data
+// Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
 	tags := &[]Tag{}
 	tagsEnd := startAt + 8 + 8

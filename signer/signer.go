@@ -1,3 +1,4 @@
+// Package provides primitives for signing data
 package signer
 
 import (
@@ -14,6 +15,23 @@ type Signer struct {
 	Address    string
 	PublicKey  *rsa.PublicKey
 	PrivateKey *rsa.PrivateKey
+}
+
+func New() (*Signer, error) {
+	bitSize := 4096
+	key, err := rsa.GenerateKey(rand.Reader, bitSize)
+	if err != nil {
+		return nil, err
+	}
+	jwk, err := gojwk.PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+	data, err := gojwk.Marshal(jwk)
+	if err != nil {
+		return nil, err
+	}
+	return FromJWK(data)
 }
 
 func FromPath(path string) (*Signer, error) {
@@ -76,21 +94,4 @@ func FromPrivateKey(privateKey *rsa.PrivateKey) (*Signer, error) {
 
 func (s *Signer) Owner() string {
 	return crypto.Base64Encode(s.PublicKey.N.Bytes())
-}
-
-func New() ([]byte, error) {
-	bitSize := 4096
-	key, err := rsa.GenerateKey(rand.Reader, bitSize)
-	if err != nil {
-		return nil, err
-	}
-	jwk, err := gojwk.PrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-	data, err := gojwk.Marshal(jwk)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
 }

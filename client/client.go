@@ -1,3 +1,5 @@
+// Package client provides function to interact with
+// the Arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 package client
 
 import (
@@ -9,7 +11,6 @@ import (
 	"github.com/liteseed/goar/transaction"
 )
 
-// arweave HTTP API: https://docs.arweave.org/developers/server/http-api
 
 type Client struct {
 	Client  *http.Client

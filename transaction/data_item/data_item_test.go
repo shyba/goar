@@ -144,7 +144,7 @@ func TestVerifyDataItem(t *testing.T) {
 		err = dataItem.Sign(s)
 		assert.NoError(t, err)
 
-		err = Verify(dataItem)
+		err = dataItem.Verify()
 		assert.NoError(t, err)
 	})
 	t.Run("Verify - data, tags, anchor, target", func(t *testing.T) {
@@ -162,7 +162,7 @@ func TestVerifyDataItem(t *testing.T) {
 		err = dataItem.Sign(s)
 		assert.NoError(t, err)
 
-		err = Verify(dataItem)
+		err = dataItem.Verify()
 		assert.NoError(t, err)
 	})
 	t.Run("Verify - Stub", func(t *testing.T) {
@@ -172,7 +172,7 @@ func TestVerifyDataItem(t *testing.T) {
 		dataItem, err := Decode(data)
 		assert.NoError(t, err)
 
-		err = Verify(dataItem)
+		err = dataItem.Verify()
 		assert.NoError(t, err)
 	})
 }

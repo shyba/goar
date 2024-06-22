@@ -24,7 +24,42 @@ func New(data []byte, target string, quantity string, tags *[]tag.Tag) *Transact
 	}
 }
 
-func GetSignatureData(tx *Transaction) ([]byte, error) {
+func (tx *Transaction) Sign(s *signer.Signer) error {
+	payload, err := tx.getSignatureData()
+	if err != nil {
+		return err
+	}
+	rawSignature, err := crypto.Sign(payload, s.PrivateKey)
+	if err != nil {
+		return err
+	}
+	txId, err := crypto.SHA256(rawSignature)
+	if err != nil {
+		return err
+	}
+
+	tx.ID = crypto.Base64Encode(txId[:])
+	tx.Signature = crypto.Base64Encode(rawSignature)
+	return nil
+}
+
+func (tx *Transaction) Verify() error {
+	signatureData, err := tx.getSignatureData()
+	if err != nil {
+		return err
+	}
+	rawSignature, err := crypto.Base64Decode(tx.Signature)
+	if err != nil {
+		return err
+	}
+	publicKey, err := crypto.GetPublicKeyFromOwner(tx.Owner)
+	if err != nil {
+		return err
+	}
+	return crypto.Verify(signatureData, rawSignature, publicKey)
+}
+
+func (tx *Transaction) getSignatureData() ([]byte, error) {
 	if tx.Format != 2 {
 		return nil, errors.New("only type 2 transaction supported")
 	}
@@ -72,39 +107,4 @@ func GetSignatureData(tx *Transaction) ([]byte, error) {
 	deepHash := crypto.DeepHash(chunks)
 	signatureData := deepHash[:]
 	return signatureData, nil
-}
-
-func (tx *Transaction) Verify() error {
-	signatureData, err := GetSignatureData(tx)
-	if err != nil {
-		return err
-	}
-	rawSignature, err := crypto.Base64Decode(tx.Signature)
-	if err != nil {
-		return err
-	}
-	publicKey, err := crypto.GetPublicKeyFromOwner(tx.Owner)
-	if err != nil {
-		return err
-	}
-	return crypto.Verify(signatureData, rawSignature, publicKey)
-}
-
-func (tx *Transaction) Sign(s *signer.Signer) error {
-	payload, err := GetSignatureData(tx)
-	if err != nil {
-		return err
-	}
-	rawSignature, err := crypto.Sign(payload, s.PrivateKey)
-	if err != nil {
-		return err
-	}
-	txId, err := crypto.SHA256(rawSignature)
-	if err != nil {
-		return err
-	}
-
-	tx.ID = crypto.Base64Encode(txId[:])
-	tx.Signature = crypto.Base64Encode(rawSignature)
-	return nil
 }
