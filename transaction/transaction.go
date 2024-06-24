@@ -15,12 +15,16 @@ func New(data []byte, target string, quantity string, tags *[]tag.Tag) *Transact
 	if quantity == "" {
 		quantity = "0"
 	}
+	if data == nil {
+		data = []byte("")
+	}
 	return &Transaction{
 		Format:   2,
 		Data:     data,
 		Target:   target,
 		Quantity: quantity,
 		Tags:     tag.Encode(tags),
+		DataSize: "0",
 	}
 }
 

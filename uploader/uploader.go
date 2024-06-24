@@ -59,7 +59,6 @@ func New(c *client.Client, t *transaction.Transaction) (*TransactionUploader, er
 func (tu *TransactionUploader) PostTransaction() error {
 	uploadInBody := tu.TotalChunks <= MAX_CHUNKS_IN_BODY
 	if uploadInBody {
-
 		code, err := tu.client.SubmitTransaction(tu.transaction)
 		if err != nil {
 			return err

@@ -50,7 +50,7 @@ type Transaction struct {
 	DataSize  string     `json:"data_size"`
 	DataRoot  string     `json:"data_root"`
 
-	ChunkData *ChunkData
+	ChunkData *ChunkData `json:"-"`
 }
 
 type TransactionOffset struct {

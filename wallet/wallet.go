@@ -67,7 +67,7 @@ func (w *Wallet) SignTransaction(tx *transaction.Transaction) (*transaction.Tran
 		return nil, err
 	}
 	tx.Reward = reward
-
+	
 	if err = tx.Sign(w.Signer); err != nil {
 		return nil, err
 	}
