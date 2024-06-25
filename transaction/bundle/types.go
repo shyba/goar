@@ -11,5 +11,5 @@ type BundleHeader struct {
 type Bundle struct {
 	Headers []BundleHeader       `json:"bundle_header"`
 	Items   []data_item.DataItem `json:"items"`
-	RawData []byte               `json:"raw_data"`
+	Raw     []byte               `json:"raw_data"`
 }

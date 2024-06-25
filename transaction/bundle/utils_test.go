@@ -10,7 +10,7 @@ import (
 )
 
 func TestDecodeBundleHeader(t *testing.T) {
-	data, err := os.ReadFile("../../test/stubs/bundleHeader")
+	data, err := os.ReadFile("../../test//bundleHeader")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,7 +21,7 @@ func TestDecodeBundleHeader(t *testing.T) {
 }
 
 func TestGenerateBundleHeader(t *testing.T) {
-	data, err := os.ReadFile("../test/stubs/1115BDataItem")
+	data, err := os.ReadFile("../../test/1115BDataItem")
 	assert.NoError(t, err)
 
 	dataItem, err := data_item.Decode(data)
@@ -31,4 +31,5 @@ func TestGenerateBundleHeader(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, (*headers)[0].Size, 1115)
 	assert.Equal(t, (*headers)[0].ID, 39234)
+
 }

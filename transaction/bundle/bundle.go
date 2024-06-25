@@ -29,7 +29,7 @@ func New(dataItems *[]data_item.DataItem) (*Bundle, error) {
 		dataItemsBytes = append(dataItemsBytes, (*headers)[i].Raw...)
 	}
 
-	bundle.RawData = append(sizeBytes, append(headersBytes, dataItemsBytes...)...)
+	bundle.Raw = append(sizeBytes, append(headersBytes, dataItemsBytes...)...)
 	return bundle, nil
 }
 
@@ -41,8 +41,8 @@ func Decode(data []byte) (*Bundle, error) {
 	}
 	headers, N := decodeBundleHeader(&data)
 	bundle := &Bundle{
-		Items:   make([]data_item.DataItem, N),
-		RawData: data,
+		Items: make([]data_item.DataItem, N),
+		Raw:   data,
 	}
 	bundleStart := 32 + 64*N
 	for i := 0; i < N; i++ {

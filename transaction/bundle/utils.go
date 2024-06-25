@@ -18,8 +18,8 @@ func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
 
 		id := int(binary.LittleEndian.Uint16(idBytes))
 		size := len(dataItem.Raw)
-		raw := make([]byte, 64)
-		binary.LittleEndian.PutUint16(raw, uint16(size))
+		raw := make([]byte, 0)
+		binary.LittleEndian.AppendUint16(raw, uint16(size))
 		binary.LittleEndian.AppendUint16(raw, uint16(id))
 		headers = append(headers, BundleHeader{ID: id, Size: size, Raw: raw})
 	}
