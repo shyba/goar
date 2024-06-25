@@ -14,10 +14,10 @@ func TestDecodeBundleHeader(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	headers, N := decodeBundleHeader(&data)
+	headers, N := decodeBundleHeader(data)
 	assert.Equal(t, N, 1)
-	assert.Equal(t, (*headers)[0].Size, 1115)
-	assert.Equal(t, (*headers)[0].ID, 39234)
+	assert.Equal(t, 1115, (*headers)[0].Size)
+	assert.Equal(t, 4617428110304385346, (*headers)[0].ID)
 }
 
 func TestGenerateBundleHeader(t *testing.T) {
@@ -29,7 +29,6 @@ func TestGenerateBundleHeader(t *testing.T) {
 	headers, err := generateBundleHeader(&[]data_item.DataItem{*dataItem})
 
 	assert.NoError(t, err)
-	assert.Equal(t, (*headers)[0].Size, 1115)
-	assert.Equal(t, (*headers)[0].ID, 39234)
-
+	assert.Equal(t, 1115, (*headers)[0].Size)
+	assert.Equal(t, 4617428110304385346, (*headers)[0].ID)
 }

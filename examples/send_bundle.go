@@ -8,24 +8,31 @@ import (
 	"github.com/liteseed/goar/wallet"
 )
 
-func SendBundle() {
-	w, err := wallet.FromPath("./arweave.json", "https://arweave.net")
+func main() {
+	w, err := wallet.FromPath("./arweave.json", "http://localhost:1984")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(w.Signer)
+
+	d1 := w.CreateDataItem([]byte("test"), "", "", nil)
+	_, err = w.SignDataItem(d1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	d := w.CreateDataItem([]byte("test"), "", "", nil)
-	_, err = w.SignDataItem(d)
+	b, err := w.CreateBundle(&[]data_item.DataItem{*d1})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	b, err := w.CreateBundle(&[]data_item.DataItem{*d})
+	d2 := w.CreateDataItem(b.Raw, "", "", nil)
+	_, err = w.SignDataItem(d2)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tx := w.CreateTransaction(b.Raw, "", "", &[]tag.Tag{{Name: "test", Value: "test"}})
+	tx := w.CreateTransaction(d2.Raw, "", "", &[]tag.Tag{{Name: "test", Value: "test"}})
 	log.Println(tx)
 	_, err = w.SignTransaction(tx)
 	if err != nil {

@@ -8,29 +8,38 @@ import (
 
 // Create a data bundle from a group of data items
 // Learn more: // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
-func New(dataItems *[]data_item.DataItem) (*Bundle, error) {
-	bundle := &Bundle{}
+func New(ds *[]data_item.DataItem) (*Bundle, error) {
+	b := &Bundle{}
 
-	headers, err := generateBundleHeader(dataItems)
+	headers, err := generateBundleHeader(ds)
 	if err != nil {
 		return nil, err
 	}
 
-	bundle.Headers = *headers
-	bundle.Items = *dataItems
-	N := len(*dataItems)
+	b.Headers = *headers
+	b.Items = *ds
+	N := len(*ds)
 
-	var sizeBytes []byte
 	var headersBytes []byte
 	var dataItemsBytes []byte
 
 	for i := 0; i < N; i++ {
-		headersBytes = append(headersBytes, (*headers)[i].Raw...)
-		dataItemsBytes = append(dataItemsBytes, (*headers)[i].Raw...)
+		h := (*headers)[i]
+		sizeBytes := longTo32ByteArray(h.Size)
+		idBytes := longTo32ByteArray(h.ID)
+		headersBytes = append(headersBytes, sizeBytes...)
+		headersBytes = append(headersBytes, idBytes...)
+
+		d := (*ds)[i]
+		dataItemsBytes = append(dataItemsBytes, d.Raw...)
 	}
 
-	bundle.Raw = append(sizeBytes, append(headersBytes, dataItemsBytes...)...)
-	return bundle, nil
+	raw := make([]byte, 0)
+	raw = append(raw, longTo32ByteArray(N)...)
+	raw = append(raw, headersBytes...)
+	raw = append(raw, dataItemsBytes...)
+	b.Raw = raw
+	return b, nil
 }
 
 // Decode raw bytes into a Bundle
@@ -39,7 +48,7 @@ func Decode(data []byte) (*Bundle, error) {
 	if len(data) < 32 {
 		return nil, errors.New("binary length must more than 32")
 	}
-	headers, N := decodeBundleHeader(&data)
+	headers, N := decodeBundleHeader(data)
 	bundle := &Bundle{
 		Items: make([]data_item.DataItem, N),
 		Raw:   data,
@@ -63,7 +72,7 @@ func Verify(data []byte) (bool, error) {
 	if len(data) < 32 {
 		return false, errors.New("binary length must more than 32")
 	}
-	headers, N := decodeBundleHeader(&data)
+	headers, N := decodeBundleHeader(data)
 	dataItemSize := 0
 	for i := 0; i < N; i++ {
 		dataItemSize += (*headers)[i].Size
