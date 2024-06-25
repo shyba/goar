@@ -18,6 +18,9 @@ const (
 // Create a new DataItem
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataItem {
+	if tags == nil {
+		tags = &[]tag.Tag{}
+	}
 	return &DataItem{
 		Target: target,
 		Anchor: anchor,
