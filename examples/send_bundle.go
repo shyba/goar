@@ -8,31 +8,29 @@ import (
 	"github.com/liteseed/goar/wallet"
 )
 
-func main() {
-	w, err := wallet.FromPath("./arweave.json", "http://localhost:1984")
+func SendBundle() {
+	w, err := wallet.FromPath("./arweave.json", "https://arweave.net")
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Println(w.Signer)
 
-	d1 := w.CreateDataItem([]byte("test"), "", "", nil)
-	_, err = w.SignDataItem(d1)
+	dataItems := []data_item.DataItem{}
+	for i := 0; i < 10; i++ {
+		d := w.CreateDataItem([]byte("test"), "", "", &[]tag.Tag{{Name: "test", Value: "test"}})
+		_, err = w.SignDataItem(d)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dataItems = append(dataItems, *d)
+	}
+
+	b, err := w.CreateBundle(&dataItems)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	b, err := w.CreateBundle(&[]data_item.DataItem{*d1})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	d2 := w.CreateDataItem(b.Raw, "", "", nil)
-	_, err = w.SignDataItem(d2)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	tx := w.CreateTransaction(d2.Raw, "", "", &[]tag.Tag{{Name: "test", Value: "test"}})
+	tx := w.CreateTransaction(b.Raw, "", "", &[]tag.Tag{{Name: "test", Value: "test"}, {Name: "test", Value: "test"}, {Name: "test", Value: "test"}})
 	log.Println(tx)
 	_, err = w.SignTransaction(tx)
 	if err != nil {
@@ -42,4 +40,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 }

@@ -3,6 +3,7 @@ package bundle
 import (
 	"errors"
 
+	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/transaction/data_item"
 )
 
@@ -26,7 +27,10 @@ func New(ds *[]data_item.DataItem) (*Bundle, error) {
 	for i := 0; i < N; i++ {
 		h := (*headers)[i]
 		sizeBytes := longTo32ByteArray(h.Size)
-		idBytes := longTo32ByteArray(h.ID)
+		idBytes, err := crypto.Base64Decode(h.ID)
+		if err != nil {
+			return nil, err
+		}
 		headersBytes = append(headersBytes, sizeBytes...)
 		headersBytes = append(headersBytes, idBytes...)
 
@@ -55,7 +59,7 @@ func Decode(data []byte) (*Bundle, error) {
 	}
 	bundleStart := 32 + 64*N
 	for i := 0; i < N; i++ {
-		header := (*headers)[i]
+		header := headers[i]
 		bundleEnd := bundleStart + header.Size
 		dataItem, err := data_item.Decode(data[bundleStart:bundleEnd])
 		if err != nil {
@@ -75,7 +79,7 @@ func Verify(data []byte) (bool, error) {
 	headers, N := decodeBundleHeader(data)
 	dataItemSize := 0
 	for i := 0; i < N; i++ {
-		dataItemSize += (*headers)[i].Size
+		dataItemSize += headers[i].Size
 	}
 	return len(data) == dataItemSize+32+64*N, nil
 }

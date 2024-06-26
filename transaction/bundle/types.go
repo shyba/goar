@@ -3,8 +3,9 @@ package bundle
 import "github.com/liteseed/goar/transaction/data_item"
 
 type BundleHeader struct {
-	ID   int
+	ID   string
 	Size int
+	Raw  []byte
 }
 
 type Bundle struct {
