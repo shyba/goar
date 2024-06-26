@@ -157,7 +157,7 @@ func buildLayer(nodes []Node, level int) (*Node, error) {
 	}
 
 	nextLayer := []Node{}
-	for i := 0; i < len(nodes); i += 2 {
+	for i := 0; i < len(nodes) - 1; i += 2 {
 		node, err := hashBranch(&nodes[i], &nodes[i+1])
 		if err != nil {
 			return nil, err
