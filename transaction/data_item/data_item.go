@@ -25,7 +25,7 @@ func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataIte
 		Target: target,
 		Anchor: anchor,
 		Tags:   tags,
-		Data:   crypto.Base64Encode(rawData),
+		Data:   crypto.Base64URLEncode(rawData),
 	}
 }
 
@@ -43,15 +43,15 @@ func Decode(raw []byte) (*DataItem, error) {
 
 	signatureStart := 2
 	signatureEnd := signatureLength + signatureStart
-	signature := crypto.Base64Encode(raw[signatureStart:signatureEnd])
+	signature := crypto.Base64URLEncode(raw[signatureStart:signatureEnd])
 	rawId, err := crypto.SHA256(raw[signatureStart:signatureEnd])
 	if err != nil {
 		return nil, err
 	}
-	id := crypto.Base64Encode(rawId)
+	id := crypto.Base64URLEncode(rawId)
 	ownerStart := signatureEnd
 	ownerEnd := ownerStart + publicKeyLength
-	owner := crypto.Base64Encode(raw[ownerStart:ownerEnd])
+	owner := crypto.Base64URLEncode(raw[ownerStart:ownerEnd])
 
 	position := ownerEnd
 	target, position := getTarget(&raw, position)
@@ -60,7 +60,7 @@ func Decode(raw []byte) (*DataItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := crypto.Base64Encode(raw[position:])
+	data := crypto.Base64URLEncode(raw[position:])
 
 	return &DataItem{
 		ID:            id,
@@ -87,12 +87,12 @@ func (d *DataItem) Sign(s *signer.Signer) error {
 		return err
 	}
 
-	rawOwner, err := crypto.Base64Decode(s.Owner())
+	rawOwner, err := crypto.Base64URLDecode(s.Owner())
 	if err != nil {
 		return err
 	}
 
-	rawTarget, err := crypto.Base64Decode(d.Target)
+	rawTarget, err := crypto.Base64URLDecode(d.Target)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (d *DataItem) Sign(s *signer.Signer) error {
 	if err != nil {
 		return err
 	}
-	rawData, err := crypto.Base64Decode(d.Data)
+	rawData, err := crypto.Base64URLDecode(d.Data)
 	if err != nil {
 		return err
 	}
@@ -140,15 +140,15 @@ func (d *DataItem) Sign(s *signer.Signer) error {
 	}
 
 	d.Owner = s.Owner()
-	d.Signature = crypto.Base64Encode(rawSignature)
-	d.ID = crypto.Base64Encode(rawID)
+	d.Signature = crypto.Base64URLEncode(rawSignature)
+	d.ID = crypto.Base64URLEncode(rawID)
 	d.Raw = raw
 	return nil
 }
 
 func (d *DataItem) Verify() error {
 	// Verify ID
-	rawSignature, err := crypto.Base64Decode(d.Signature)
+	rawSignature, err := crypto.Base64URLDecode(d.Signature)
 	if err != nil {
 		return err
 	}
@@ -156,7 +156,7 @@ func (d *DataItem) Verify() error {
 	if err != nil {
 		return err
 	}
-	id := crypto.Base64Encode(rawId)
+	id := crypto.Base64URLEncode(rawId)
 	if id != d.ID {
 		return errors.New("invalid data item - signature and id don't match")
 	}

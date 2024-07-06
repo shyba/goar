@@ -27,7 +27,7 @@ func New(ds *[]data_item.DataItem) (*Bundle, error) {
 	for i := 0; i < N; i++ {
 		h := (*headers)[i]
 		sizeBytes := longTo32ByteArray(h.Size)
-		idBytes, err := crypto.Base64Decode(h.ID)
+		idBytes, err := crypto.Base64URLDecode(h.ID)
 		if err != nil {
 			return nil, err
 		}

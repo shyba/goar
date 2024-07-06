@@ -71,19 +71,19 @@ type GetChunkResult struct {
 	Chunk    string `json:"chunks"`
 }
 
-func (t *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
-	if t.ChunkData != nil {
+func (tx *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
+	if tx.ChunkData == nil {
 		return nil, errors.New("chunks have not been prepared")
 	}
-	proof := t.ChunkData.Proofs[i]
-	chunk := t.ChunkData.Chunks[i]
+	proof := tx.ChunkData.Proofs[i]
+	chunk := tx.ChunkData.Chunks[i]
 
 	return &GetChunkResult{
-		DataRoot: t.DataRoot,
-		DataSize: t.DataSize,
-		DataPath: crypto.Base64Encode(proof.Proof),
+		DataRoot: tx.DataRoot,
+		DataSize: tx.DataSize,
+		DataPath: crypto.Base64URLEncode(proof.Proof),
 		Offset:   fmt.Sprint(proof.Offset),
-		Chunk:    crypto.Base64Encode(data[chunk.MinByteRange:chunk.MaxByteRange]),
+		Chunk:    crypto.Base64URLEncode(data[chunk.MinByteRange:chunk.MaxByteRange]),
 	}, nil
 }
 
@@ -92,15 +92,15 @@ func (t *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
 // This function computes the chunks for the data passed in and
 // assigns the result to this transaction. It should not read the
 // data *from* this transaction.
-func (t *Transaction) PrepareChunks(data []byte) error {
+func (tx *Transaction) PrepareChunks(data []byte) error {
 	if len(data) > 0 {
 		chunks, err := generateTransactionChunks(data)
 		if err != nil {
 			return err
 		}
-		t.DataSize = fmt.Sprint(len(data))
-		t.ChunkData = chunks
-		t.DataRoot = (*chunks).DataRoot
+		tx.DataSize = fmt.Sprint(len(data))
+		tx.ChunkData = chunks
+		tx.DataRoot = (*chunks).DataRoot
 	}
 	return nil
 }

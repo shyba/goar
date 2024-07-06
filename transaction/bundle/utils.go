@@ -11,7 +11,7 @@ func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
 	headers := []BundleHeader{}
 
 	for _, dataItem := range *d {
-		idBytes, err := crypto.Base64Decode(dataItem.ID)
+		idBytes, err := crypto.Base64URLDecode(dataItem.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -30,7 +30,7 @@ func decodeBundleHeader(data []byte) ([]BundleHeader, int) {
 		log.Println(i, i+32, i+32, i+64)
 		log.Println(len(data[i:i+32]), len(data[i+32:i+64]))
 		size := byteArrayToLong(data[i : i+32])
-		id := crypto.Base64Encode(data[i+32 : i+64])
+		id := crypto.Base64URLEncode(data[i+32 : i+64])
 		headers = append(headers, BundleHeader{ID: id, Size: size, Raw: data[i : i+64]})
 	}
 	return headers, N

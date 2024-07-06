@@ -16,3 +16,12 @@ func encodeUint(x uint64) []byte {
 func isSlice(v any) bool {
 	return reflect.TypeOf(v).Kind() == reflect.Slice
 }
+
+
+func byteArrayToLong(b []byte) int {
+	value := 0
+	for i := len(b) - 1; i >= 0; i-- {
+		value = value*256 + int(b[i])
+	}
+	return value
+}

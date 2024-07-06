@@ -42,8 +42,8 @@ func (tx *Transaction) Sign(s *signer.Signer) error {
 		return err
 	}
 
-	tx.ID = crypto.Base64Encode(txId[:])
-	tx.Signature = crypto.Base64Encode(rawSignature)
+	tx.ID = crypto.Base64URLEncode(txId[:])
+	tx.Signature = crypto.Base64URLEncode(rawSignature)
 	return nil
 }
 
@@ -52,7 +52,7 @@ func (tx *Transaction) Verify() error {
 	if err != nil {
 		return err
 	}
-	rawSignature, err := crypto.Base64Decode(tx.Signature)
+	rawSignature, err := crypto.Base64URLDecode(tx.Signature)
 	if err != nil {
 		return err
 	}
@@ -67,11 +67,11 @@ func (tx *Transaction) getSignatureData() ([]byte, error) {
 	if tx.Format != 2 {
 		return nil, errors.New("only type 2 transaction supported")
 	}
-	rawOwner, err := crypto.Base64Decode(tx.Owner)
+	rawOwner, err := crypto.Base64URLDecode(tx.Owner)
 	if err != nil {
 		return nil, err
 	}
-	rawTarget, err := crypto.Base64Decode(tx.Target)
+	rawTarget, err := crypto.Base64URLDecode(tx.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (tx *Transaction) getSignatureData() ([]byte, error) {
 		return nil, err
 	}
 
-	rawLastTx, err := crypto.Base64Decode(tx.LastTx)
+	rawLastTx, err := crypto.Base64URLDecode(tx.LastTx)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (tx *Transaction) getSignatureData() ([]byte, error) {
 		return nil, err
 	}
 
-	rawDataRoot, err := crypto.Base64Decode(tx.DataRoot)
+	rawDataRoot, err := crypto.Base64URLDecode(tx.DataRoot)
 	if err != nil {
 		return nil, err
 	}

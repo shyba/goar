@@ -1,16 +1,25 @@
 package transaction
 
 import (
+	"errors"
 	"math"
+	"reflect"
 
 	"github.com/liteseed/goar/crypto"
 )
+
+type ValidatePathResult struct {
+	Offset     int
+	LeftBound  int
+	RightBound int
+	ChunkSize  int
+}
 
 const (
 	MAX_CHUNK_SIZE = 256 * 1024
 	MIN_CHUNK_SIZE = 32 * 1024
 	NOTE_SIZE      = 32
-	HASH_SIZE      = 3
+	HASH_SIZE      = 32
 
 	// Node Type
 
@@ -69,7 +78,7 @@ func generateTransactionChunks(data []byte) (*ChunkData, error) {
 	}
 
 	return &ChunkData{
-		DataRoot: crypto.Base64Encode(root.ID),
+		DataRoot: crypto.Base64URLEncode(root.ID),
 		Chunks:   chunks,
 		Proofs:   proofs,
 	}, nil
@@ -157,7 +166,7 @@ func buildLayer(nodes []Node, level int) (*Node, error) {
 	}
 
 	nextLayer := []Node{}
-	for i := 0; i < len(nodes) - 1; i += 2 {
+	for i := 0; i < len(nodes)-1; i += 2 {
 		node, err := hashBranch(&nodes[i], &nodes[i+1])
 		if err != nil {
 			return nil, err
@@ -217,9 +226,95 @@ func generateProofs(node *Node, proof []byte, depth int) []Proof {
 	return proofs
 }
 
-func validatePath() bool {
-	// TODO: Implement
-	return false
+func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byte) (*ValidatePathResult, error) {
+	if rightBound <= 0 {
+		return nil, errors.New("out of bound right")
+	}
+	if dest >= rightBound {
+		return validatePath(id, 0, rightBound-1, rightBound, path)
+	}
+	if dest < 0 {
+		return validatePath(id, 0, 0, rightBound, path)
+	}
+	if len(path) == HASH_SIZE+NOTE_SIZE {
+		pathData := path[0:HASH_SIZE]
+		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
+
+		hash0, err := crypto.SHA256(pathData)
+		if err != nil {
+			return nil, err
+		}
+
+		hash1, err := crypto.SHA256(endOffsetBuffer)
+		if err != nil {
+			return nil, err
+		}
+
+		pathDataHash, err := crypto.SHA256(append(hash0, hash1...))
+		if err != nil {
+			return nil, err
+		}
+
+		if reflect.DeepEqual(id, pathDataHash) {
+			return &ValidatePathResult{
+				Offset:     rightBound - 1,
+				LeftBound:  leftBound,
+				RightBound: rightBound,
+				ChunkSize:  rightBound - leftBound,
+			}, nil
+		}
+		return nil, errors.New("invalid path")
+	} else {
+		left := path[0:HASH_SIZE]
+		right := path[len(left) : len(left)+HASH_SIZE]
+		offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
+		offset := byteArrayToLong(offsetBuffer)
+		remainder := path[len(left)+len(right)+len(offsetBuffer):]
+
+		l, err := crypto.SHA256(left)
+		if err != nil {
+			return nil, err
+		}
+		r, err := crypto.SHA256(right)
+		if err != nil {
+			return nil, err
+		}
+
+		o, err := crypto.SHA256(offsetBuffer)
+		if err != nil {
+			return nil, err
+		}
+
+		p := []byte{}
+		p = append(p, l...)
+		p = append(p, r...)
+		p = append(p, o...)
+		pathDataHash, err := crypto.SHA256(p)
+		if err != nil {
+			return nil, err
+		}
+
+		if reflect.DeepEqual(id, pathDataHash) {
+			if dest < int(offset) {
+				return validatePath(
+					left,
+					dest,
+					leftBound,
+					min(rightBound, offset),
+					remainder,
+				)
+			} else {
+				return validatePath(
+					right,
+					dest,
+					max(leftBound, offset),
+					rightBound,
+					remainder,
+				)
+			}
+		}
+	}
+	return nil, errors.New("no valid path")
 }
 
 func flatten[T any](v []any) []T {

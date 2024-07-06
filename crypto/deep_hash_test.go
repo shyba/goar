@@ -18,32 +18,32 @@ func TestDeepHash(t *testing.T) {
 	t.Run("1", func(t *testing.T) {
 		data := []byte{}
 		r := DeepHash(data)
-		assert.Equal(t, "-_AMxET1_qncO-32KhP7qK6H50RfyRBWeiO-xOuC-tsRQ8QzBpMU2DYpg9w8Lko4", Base64Encode(r[:]))
+		assert.Equal(t, "-_AMxET1_qncO-32KhP7qK6H50RfyRBWeiO-xOuC-tsRQ8QzBpMU2DYpg9w8Lko4", Base64URLEncode(r[:]))
 	})
 	t.Run("2", func(t *testing.T) {
 		data := [][]byte{{1, 2, 3}}
 		r := DeepHash(data)
-		assert.Equal(t, "48RIKS3zEOKqJgEe5CdqiAQ9xh1L4m_dFcy1deagU5VSF9HXcLN03FPBKAky1QEk", Base64Encode(r[:]))
+		assert.Equal(t, "48RIKS3zEOKqJgEe5CdqiAQ9xh1L4m_dFcy1deagU5VSF9HXcLN03FPBKAky1QEk", Base64URLEncode(r[:]))
 	})
 	t.Run("3", func(t *testing.T) {
 		data := []byte{1, 2, 3, 4, 5, 6, 7}
 		r := DeepHash(data)
-		assert.Equal(t, "g2o7Doi92hekMqQoyUDTmdHhTPnLtOth_jClkUmTg1Xqfmhihe6g2Hkxejm9q5uN", Base64Encode(r[:]))
+		assert.Equal(t, "g2o7Doi92hekMqQoyUDTmdHhTPnLtOth_jClkUmTg1Xqfmhihe6g2Hkxejm9q5uN", Base64URLEncode(r[:]))
 	})
 	t.Run("4", func(t *testing.T) {
 		data := [][]byte{{1, 2, 3, 4, 5, 6, 7}, {}, {1, 2, 3, 4, 5, 6, 7}, {1, 2, 3, 4, 5, 6, 7}, {1, 2, 3}}
 		r := DeepHash(data)
-		assert.Equal(t, "9Tixlu4upVVHyG2EKfH813A4CQJs-3ER30CLeC13nsu6pJ8FtJv2hVJwGuxMZZp0", Base64Encode(r[:]))
+		assert.Equal(t, "9Tixlu4upVVHyG2EKfH813A4CQJs-3ER30CLeC13nsu6pJ8FtJv2hVJwGuxMZZp0", Base64URLEncode(r[:]))
 	})
 	t.Run("5", func(t *testing.T) {
 		data := [][]byte{{0}}
 		r := DeepHash(data)
-		assert.Equal(t, "MIPBvgxCUbtsISBhPBxudGTcoY-rb4126Sh_Viw6UuBEatXtbd_3DtmzClY3dSxC", Base64Encode(r[:]))
+		assert.Equal(t, "MIPBvgxCUbtsISBhPBxudGTcoY-rb4126Sh_Viw6UuBEatXtbd_3DtmzClY3dSxC", Base64URLEncode(r[:]))
 	})
 	t.Run("6", func(t *testing.T) {
 		data := [][]byte{{}}
 		r := DeepHash(data)
-		assert.Equal(t, "u_5kojLZOEwkWFm_IWBZj3H4Siy7Ube_IHQ24xCtpQksil7tglh4W8BIHE3aCEOK", Base64Encode(r[:]))
+		assert.Equal(t, "u_5kojLZOEwkWFm_IWBZj3H4Siy7Ube_IHQ24xCtpQksil7tglh4W8BIHE3aCEOK", Base64URLEncode(r[:]))
 	})
 
 	t.Run("7", func(t *testing.T) {
@@ -114,7 +114,7 @@ func TestDeepHash(t *testing.T) {
 			},
 		}
 		r := DeepHash(data)
-		assert.Equal(t, "dZ3v54eztF_qMB8iigvrgi0X4P28T1Cs0Fjp1PG5J9Gi-TsU5X1cCpyfwYc1D_P9", Base64Encode(r[:]))
+		assert.Equal(t, "dZ3v54eztF_qMB8iigvrgi0X4P28T1Cs0Fjp1PG5J9Gi-TsU5X1cCpyfwYc1D_P9", Base64URLEncode(r[:]))
 
 	})
 }

@@ -76,12 +76,12 @@ func getSignatureMetadata(data []byte) (SignatureType int, SignatureLength int, 
 
 // This function assembles DataItem data in a format specified by ANS-104 and hashes is it using DeepHash
 func (d *DataItem) getDataItemChunk() ([]byte, error) {
-	rawOwner, err := crypto.Base64Decode(d.Owner)
+	rawOwner, err := crypto.Base64URLDecode(d.Owner)
 	if err != nil {
 		return nil, err
 	}
 
-	rawTarget, err := crypto.Base64Decode(d.Target)
+	rawTarget, err := crypto.Base64URLDecode(d.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (d *DataItem) getDataItemChunk() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawData, err := crypto.Base64Decode(d.Data)
+	rawData, err := crypto.Base64URLDecode(d.Data)
 	if err != nil {
 		return nil, err
 	}

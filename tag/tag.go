@@ -108,11 +108,11 @@ func Decode(tags *[]Tag) ([][][]byte, error) {
 	}
 	data := make([][][]byte, 0)
 	for _, tag := range *tags {
-		name, err := crypto.Base64Decode(tag.Name)
+		name, err := crypto.Base64URLDecode(tag.Name)
 		if err != nil {
 			return nil, err
 		}
-		value, err := crypto.Base64Decode(tag.Value)
+		value, err := crypto.Base64URLDecode(tag.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +124,7 @@ func Decode(tags *[]Tag) ([][][]byte, error) {
 func Encode(tags *[]Tag) *[]Tag {
 	result := []Tag{}
 	for _, tag := range *tags {
-		result = append(result, Tag{Name: crypto.Base64Encode([]byte(tag.Name)), Value: crypto.Base64Encode([]byte(tag.Value))})
+		result = append(result, Tag{Name: crypto.Base64URLEncode([]byte(tag.Name)), Value: crypto.Base64URLEncode([]byte(tag.Value))})
 	}
 	return &result
 }

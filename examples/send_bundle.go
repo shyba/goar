@@ -31,7 +31,6 @@ func SendBundle() {
 	}
 
 	tx := w.CreateTransaction(b.Raw, "", "", &[]tag.Tag{{Name: "test", Value: "test"}, {Name: "test", Value: "test"}, {Name: "test", Value: "test"}})
-	log.Println(tx)
 	_, err = w.SignTransaction(tx)
 	if err != nil {
 		log.Fatal(err)
