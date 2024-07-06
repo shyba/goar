@@ -93,5 +93,22 @@ func FromPrivateKey(privateKey *rsa.PrivateKey) (*Signer, error) {
 }
 
 func (s *Signer) Owner() string {
-	return crypto.Base64Encode(s.PublicKey.N.Bytes())
+	return crypto.Base64URLEncode(s.PublicKey.N.Bytes())
+}
+
+func Generate() ([]byte, error) {
+	bitSize := 4096
+	key, err := rsa.GenerateKey(rand.Reader, bitSize)
+	if err != nil {
+		return nil, err
+	}
+	jwk, err := gojwk.PrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+	data, err := gojwk.Marshal(jwk)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
