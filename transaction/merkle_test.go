@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/liteseed/goar/crypto"
-	"github.com/liteseed/goar/signer"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,15 +21,9 @@ func TestMerkle(t *testing.T) {
 		data, err := os.ReadFile("../test/1MB.bin")
 		assert.NoError(t, err)
 
-		s, err := signer.FromPath("../test/signer.json")
-		assert.NoError(t, err)
-
 		tx := New(data, "", "", nil)
 		tx.LastTx = "foo"
 		tx.Reward = "1"
-
-		err = tx.Sign(s)
-		assert.NoError(t, err)
 
 		err = tx.PrepareChunks(data)
 		assert.NoError(t, err)
@@ -48,10 +41,43 @@ func TestMerkle(t *testing.T) {
 			dataSize, err := strconv.Atoi(chunk.DataSize)
 			assert.NoError(t, err)
 
-			dataRoot, err := crypto.Base64URLDecode(chunk.DataRoot)
+			dataPath, err := crypto.Base64URLDecode(chunk.DataPath)
 			assert.NoError(t, err)
 
-			r, err := validatePath(txDataRoot, offset, 0, dataSize, dataRoot)
+			r, err := validatePath(txDataRoot, offset, 0, dataSize, dataPath)
+			assert.NotNil(t, r)
+			assert.NoError(t, err)
+		}
+	})
+
+	t.Run("should validate all paths in lotsofdata.bin test file", func(t *testing.T) {
+		data, err := os.ReadFile("../test/lotsofdata.bin")
+		assert.NoError(t, err)
+
+		tx := New(data, "", "", nil)
+		tx.LastTx = "foo"
+		tx.Reward = "1"
+
+		err = tx.PrepareChunks(data)
+		assert.NoError(t, err)
+
+		txDataRoot, err := crypto.Base64URLDecode(tx.DataRoot)
+		assert.NoError(t, err)
+
+		for i := range tx.ChunkData.Chunks {
+			chunk, err := tx.GetChunk(i, data)
+			assert.NoError(t, err)
+
+			offset, err := strconv.Atoi(chunk.Offset)
+			assert.NoError(t, err)
+
+			dataSize, err := strconv.Atoi(chunk.DataSize)
+			assert.NoError(t, err)
+
+			dataPath, err := crypto.Base64URLDecode(chunk.DataPath)
+			assert.NoError(t, err)
+
+			r, err := validatePath(txDataRoot, offset, 0, dataSize, dataPath)
 			assert.NotNil(t, r)
 			assert.NoError(t, err)
 		}

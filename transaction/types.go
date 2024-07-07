@@ -101,6 +101,13 @@ func (tx *Transaction) PrepareChunks(data []byte) error {
 		tx.DataSize = fmt.Sprint(len(data))
 		tx.ChunkData = chunks
 		tx.DataRoot = (*chunks).DataRoot
+	} else {
+		tx.ChunkData = &ChunkData{
+			Chunks:   []Chunk{},
+			DataRoot: "",
+			Proofs:   []Proof{},
+		}
+		tx.DataRoot = ""
 	}
 	return nil
 }

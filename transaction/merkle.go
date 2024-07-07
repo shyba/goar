@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"errors"
+	"log"
 	"math"
 	"reflect"
 
@@ -57,17 +58,14 @@ func generateTransactionChunks(data []byte) (*ChunkData, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	leaves, err := generateLeaves(chunks)
 	if err != nil {
 		return nil, err
 	}
-
 	root, err := buildLayer(leaves, 0)
 	if err != nil {
 		return nil, err
 	}
-
 	proofs := generateProofs(root, nil, 0)
 
 	// Discard the last chunk & proof if it's zero length.
@@ -138,7 +136,7 @@ func generateLeaves(chunks []Chunk) ([]Node, error) {
 			return nil, err
 		}
 
-		hashRange, err := crypto.SHA256(encodeUint(uint64(chunk.MaxByteRange)))
+		hashRange, err := crypto.SHA256(intToByteArray(chunk.MaxByteRange))
 		if err != nil {
 			return nil, err
 		}
@@ -166,8 +164,12 @@ func buildLayer(nodes []Node, level int) (*Node, error) {
 	}
 
 	nextLayer := []Node{}
-	for i := 0; i < len(nodes)-1; i += 2 {
-		node, err := hashBranch(&nodes[i], &nodes[i+1])
+	for i := 0; i < len(nodes); i += 2 {
+		var next *Node
+		if i+1 < len(nodes) {
+			next = &nodes[i+1]
+		}
+		node, err := hashBranch(&nodes[i], next)
 		if err != nil {
 			return nil, err
 		}
@@ -178,15 +180,7 @@ func buildLayer(nodes []Node, level int) (*Node, error) {
 
 func hashBranch(left *Node, right *Node) (*Node, error) {
 	if right == nil {
-		return &Node{
-			ID:           left.ID,
-			DataHash:     left.DataHash,
-			ByteRange:    left.ByteRange,
-			MaxByteRange: left.MaxByteRange,
-			Type:         Branch,
-			LeftChild:    left.LeftChild,
-			RightChild:   left.RightChild,
-		}, nil
+		return left, nil
 	}
 	leftIdHash, err := crypto.SHA256(left.ID)
 	if err != nil {
@@ -196,7 +190,7 @@ func hashBranch(left *Node, right *Node) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	leftMaxByteRangeHash, err := crypto.SHA256(encodeUint(uint64(left.MaxByteRange)))
+	leftMaxByteRangeHash, err := crypto.SHA256(intToByteArray(left.MaxByteRange))
 	if err != nil {
 		return nil, err
 	}
@@ -216,19 +210,30 @@ func hashBranch(left *Node, right *Node) (*Node, error) {
 
 func generateProofs(node *Node, proof []byte, depth int) []Proof {
 	proofs := []Proof{}
+	if node.Type == Leaf {
+		p := []byte{}
+		p = append(p, proof...)
+		p = append(p, node.DataHash...)
+		p = append(p, intToByteArray(node.MaxByteRange)...)
+		proofs = append(proofs, Proof{Offset: node.MaxByteRange - 1, Proof: p})
+	}
 	if node.Type == Branch {
-		partialProof := append(proof, append(node.LeftChild.ID, append(node.RightChild.ID, encodeUint(uint64(node.ByteRange))...)...)...)
+		partialProof := []byte{}
+		partialProof = append(partialProof, proof...)
+		partialProof = append(partialProof, node.LeftChild.ID...)
+		partialProof = append(partialProof, node.RightChild.ID...)
+		partialProof = append(partialProof, intToByteArray(node.ByteRange)...)
 		proofs = append(proofs, generateProofs(node.LeftChild, partialProof, depth+1)...)
 		proofs = append(proofs, generateProofs(node.RightChild, partialProof, depth+1)...)
-	} else if node.Type == Leaf {
-		proofs = append(proofs, Proof{Offset: node.MaxByteRange - 1, Proof: append(append(proof, node.DataHash...), encodeUint(uint64(node.MaxByteRange))...)})
 	}
+
 	return proofs
 }
 
 func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byte) (*ValidatePathResult, error) {
+	log.Println(crypto.Base64URLEncode(id), dest, leftBound, rightBound, len(path))
 	if rightBound <= 0 {
-		return nil, errors.New("out of bound right")
+		return nil, errors.New("right bound < 0")
 	}
 	if dest >= rightBound {
 		return validatePath(id, 0, rightBound-1, rightBound, path)
@@ -240,22 +245,22 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 		pathData := path[0:HASH_SIZE]
 		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
 
-		hash0, err := crypto.SHA256(pathData)
+		pathDataHash, err := crypto.SHA256(pathData)
 		if err != nil {
 			return nil, err
 		}
 
-		hash1, err := crypto.SHA256(endOffsetBuffer)
+		endOffsetBufferHash, err := crypto.SHA256(endOffsetBuffer)
 		if err != nil {
 			return nil, err
 		}
 
-		pathDataHash, err := crypto.SHA256(append(hash0, hash1...))
+		h, err := crypto.SHA256(append(pathDataHash, endOffsetBufferHash...))
 		if err != nil {
 			return nil, err
 		}
 
-		if reflect.DeepEqual(id, pathDataHash) {
+		if reflect.DeepEqual(id, h) {
 			return &ValidatePathResult{
 				Offset:     rightBound - 1,
 				LeftBound:  leftBound,
@@ -264,55 +269,54 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 			}, nil
 		}
 		return nil, errors.New("invalid path")
-	} else {
-		left := path[0:HASH_SIZE]
-		right := path[len(left) : len(left)+HASH_SIZE]
-		offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
-		offset := byteArrayToLong(offsetBuffer)
-		remainder := path[len(left)+len(right)+len(offsetBuffer):]
+	}
+	left := path[0:HASH_SIZE]
+	right := path[len(left) : len(left)+HASH_SIZE]
+	offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
+	offset := byteArrayToInt(offsetBuffer)
+	log.Println(offsetBuffer)	
+	remainder := path[len(left)+len(right)+len(offsetBuffer):]
 
-		l, err := crypto.SHA256(left)
-		if err != nil {
-			return nil, err
-		}
-		r, err := crypto.SHA256(right)
-		if err != nil {
-			return nil, err
-		}
+	l, err := crypto.SHA256(left)
+	if err != nil {
+		return nil, err
+	}
+	r, err := crypto.SHA256(right)
+	if err != nil {
+		return nil, err
+	}
 
-		o, err := crypto.SHA256(offsetBuffer)
-		if err != nil {
-			return nil, err
-		}
+	o, err := crypto.SHA256(offsetBuffer)
+	if err != nil {
+		return nil, err
+	}
 
-		p := []byte{}
-		p = append(p, l...)
-		p = append(p, r...)
-		p = append(p, o...)
-		pathDataHash, err := crypto.SHA256(p)
-		if err != nil {
-			return nil, err
-		}
+	p := []byte{}
+	p = append(p, l...)
+	p = append(p, r...)
+	p = append(p, o...)
+	pathHash, err := crypto.SHA256(p)
+	if err != nil {
+		return nil, err
+	}
 
-		if reflect.DeepEqual(id, pathDataHash) {
-			if dest < int(offset) {
-				return validatePath(
-					left,
-					dest,
-					leftBound,
-					min(rightBound, offset),
-					remainder,
-				)
-			} else {
-				return validatePath(
-					right,
-					dest,
-					max(leftBound, offset),
-					rightBound,
-					remainder,
-				)
-			}
-		}
+	if reflect.DeepEqual(id, pathHash) {
+		if dest < offset {
+			return validatePath(
+				left,
+				dest,
+				leftBound,
+				min(rightBound, offset),
+				remainder,
+			)
+		} 
+		return validatePath(
+			right,
+			dest,
+			max(leftBound, offset),
+			rightBound,
+			remainder,
+		)
 	}
 	return nil, errors.New("no valid path")
 }
