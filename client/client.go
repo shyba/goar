@@ -11,7 +11,6 @@ import (
 	"github.com/liteseed/goar/transaction"
 )
 
-
 type Client struct {
 	Client  *http.Client
 	Gateway string
@@ -153,5 +152,5 @@ func (c *Client) UploadChunk(chunk *transaction.GetChunkResult) (int, error) {
 	if err != nil {
 		return -1, err
 	}
-	return c.post("tx", b)
+	return c.post("chunk", b)
 }
