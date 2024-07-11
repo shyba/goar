@@ -68,7 +68,7 @@ type GetChunkResult struct {
 	DataSize string `json:"data_size"`
 	DataPath string `json:"data_path"`
 	Offset   string `json:"offset"`
-	Chunk    string `json:"chunks"`
+	Chunk    string `json:"chunk"`
 }
 
 func (tx *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
