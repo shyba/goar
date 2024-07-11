@@ -19,13 +19,13 @@ type Wallet struct {
 }
 
 func New(gateway string) (w *Wallet, err error) {
-	signer, err := signer.New()
+	s, err := signer.New()
 	if err != nil {
 		return nil, err
 	}
 	return &Wallet{
 		Client: client.New(gateway),
-		Signer: signer,
+		Signer: s,
 	}, nil
 }
 
@@ -39,13 +39,13 @@ func FromPath(path string, gateway string) (*Wallet, error) {
 }
 
 func FromJWK(jwk []byte, gateway string) (*Wallet, error) {
-	signer, err := signer.FromJWK(jwk)
+	s, err := signer.FromJWK(jwk)
 	if err != nil {
 		return nil, err
 	}
 	return &Wallet{
 		Client: client.New(gateway),
-		Signer: signer,
+		Signer: s,
 	}, nil
 }
 
@@ -67,7 +67,7 @@ func (w *Wallet) SignTransaction(tx *transaction.Transaction) (*transaction.Tran
 		return nil, err
 	}
 	tx.Reward = reward
-	
+
 	if err = tx.Sign(w.Signer); err != nil {
 		return nil, err
 	}

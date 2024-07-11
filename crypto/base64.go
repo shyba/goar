@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 )
 
-// Base64URL encode bytes to string
+// Base64URLEncode Encode bytes to Base64URL string
 func Base64URLEncode(data []byte) string {
 	return base64.RawURLEncoding.EncodeToString(data)
 }
 
-// Base64URL decode string to bytes
+// Base64URLDecode Decode Base64URL string to bytes
 func Base64URLDecode(data string) ([]byte, error) {
 	return base64.RawURLEncoding.DecodeString(data)
 }

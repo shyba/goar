@@ -16,7 +16,7 @@ func TestDeepHash(t *testing.T) {
 		assert.ElementsMatch(t, h, r[:])
 	})
 	t.Run("1", func(t *testing.T) {
-		data := []byte{}
+		var data []byte
 		r := DeepHash(data)
 		assert.Equal(t, "-_AMxET1_qncO-32KhP7qK6H50RfyRBWeiO-xOuC-tsRQ8QzBpMU2DYpg9w8Lko4", Base64URLEncode(r[:]))
 	})

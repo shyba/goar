@@ -15,7 +15,7 @@ const (
 	MAX_TAG_VALUE_LENGTH = 3072
 )
 
-// Create a new DataItem
+// New Create a new DataItem
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataItem {
 	if tags == nil {
@@ -43,11 +43,9 @@ func Decode(raw []byte) (*DataItem, error) {
 
 	signatureStart := 2
 	signatureEnd := signatureLength + signatureStart
+
 	signature := crypto.Base64URLEncode(raw[signatureStart:signatureEnd])
-	rawId, err := crypto.SHA256(raw[signatureStart:signatureEnd])
-	if err != nil {
-		return nil, err
-	}
+	rawId := crypto.SHA256(raw[signatureStart:signatureEnd])
 	id := crypto.Base64URLEncode(rawId)
 	ownerStart := signatureEnd
 	ownerEnd := ownerStart + publicKeyLength
@@ -134,10 +132,7 @@ func (d *DataItem) Sign(s *signer.Signer) error {
 	raw = append(raw, tagsLength...)
 	raw = append(raw, rawTags...)
 	raw = append(raw, rawData...)
-	rawID, err := crypto.SHA256(rawSignature)
-	if err != nil {
-		return err
-	}
+	rawID := crypto.SHA256(rawSignature)
 
 	d.Owner = s.Owner()
 	d.Signature = crypto.Base64URLEncode(rawSignature)
@@ -152,11 +147,10 @@ func (d *DataItem) Verify() error {
 	if err != nil {
 		return err
 	}
-	rawId, err := crypto.SHA256(rawSignature)
-	if err != nil {
-		return err
-	}
+
+	rawId := crypto.SHA256(rawSignature)
 	id := crypto.Base64URLEncode(rawId)
+
 	if id != d.ID {
 		return errors.New("invalid data item - signature and id don't match")
 	}
@@ -180,11 +174,11 @@ func (d *DataItem) Verify() error {
 		return errors.New("invalid data item - tags cannot be more than 128")
 	}
 
-	for _, tag := range *d.Tags {
-		if len([]byte(tag.Name)) == 0 || len([]byte(tag.Name)) > MAX_TAG_KEY_LENGTH {
+	for _, t := range *d.Tags {
+		if len([]byte(t.Name)) == 0 || len([]byte(t.Name)) > MAX_TAG_KEY_LENGTH {
 			return errors.New("invalid data item - tag key too long")
 		}
-		if len([]byte(tag.Value)) == 0 || len([]byte(tag.Value)) > MAX_TAG_VALUE_LENGTH {
+		if len([]byte(t.Value)) == 0 || len([]byte(t.Value)) > MAX_TAG_VALUE_LENGTH {
 			return errors.New("invalid data item - tag value too long")
 		}
 	}

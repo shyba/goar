@@ -37,12 +37,7 @@ func (tx *Transaction) Sign(s *signer.Signer) error {
 	if err != nil {
 		return err
 	}
-	txId, err := crypto.SHA256(rawSignature)
-	if err != nil {
-		return err
-	}
-
-	tx.ID = crypto.Base64URLEncode(txId[:])
+	tx.ID = crypto.Base64URLEncode(crypto.SHA256(rawSignature))
 	tx.Signature = crypto.Base64URLEncode(rawSignature)
 	return nil
 }

@@ -1,4 +1,4 @@
-// Package provides primitives for generating tags for transaction
+// Package tag provides primitives for generating tags for transaction
 package tag
 
 import (
@@ -33,7 +33,7 @@ func fromAvro(data []byte) (*[]Tag, error) {
 		return nil, err
 	}
 
-	tags := []Tag{}
+	var tags []Tag
 
 	for _, v := range avroTags.([]any) {
 		tag := v.(map[string]any)
@@ -48,7 +48,7 @@ func toAvro(tags *[]Tag) ([]byte, error) {
 		return nil, err
 	}
 
-	avroTags := []map[string]any{}
+	var avroTags []map[string]any
 
 	for _, tag := range *tags {
 		m := map[string]any{"name": []byte(tag.Name), "value": []byte(tag.Value)}
@@ -61,7 +61,7 @@ func toAvro(tags *[]Tag) ([]byte, error) {
 	return data, err
 }
 
-// Converts readable Tag data into avro-encoded byte data
+// Serialize Converts readable Tag data into avro-encoded byte data
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Serialize(tags *[]Tag) ([]byte, error) {
 	if len(*tags) > 0 {
@@ -122,7 +122,7 @@ func Decode(tags *[]Tag) ([][][]byte, error) {
 }
 
 func Encode(tags *[]Tag) *[]Tag {
-	result := []Tag{}
+	var result []Tag
 	for _, tag := range *tags {
 		result = append(result, Tag{Name: crypto.Base64URLEncode([]byte(tag.Name)), Value: crypto.Base64URLEncode([]byte(tag.Value))})
 	}

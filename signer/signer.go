@@ -1,4 +1,4 @@
-// Package provides primitives for signing data
+// Package signer provides primitives for signing data
 package signer
 
 import (
@@ -67,29 +67,21 @@ func FromJWK(b []byte) (*Signer, error) {
 		return nil, err
 	}
 
-	address, err := crypto.GetAddressFromPublicKey(publicKey)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Signer{
-		Address:    address,
+		Address:    crypto.GetAddressFromPublicKey(publicKey),
 		PublicKey:  publicKey,
 		PrivateKey: privateKey,
 	}, nil
 }
 
-func FromPrivateKey(privateKey *rsa.PrivateKey) (*Signer, error) {
+func FromPrivateKey(privateKey *rsa.PrivateKey) *Signer {
 	p := &privateKey.PublicKey
-	address, err := crypto.GetAddressFromPublicKey(p)
-	if err != nil {
-		return nil, err
-	}
+	address := crypto.GetAddressFromPublicKey(p)
 	return &Signer{
 		Address:    address,
 		PublicKey:  p,
 		PrivateKey: privateKey,
-	}, nil
+	}
 }
 
 func (s *Signer) Owner() string {

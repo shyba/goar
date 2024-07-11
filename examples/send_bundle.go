@@ -15,7 +15,7 @@ func SendBundle() {
 	}
 	log.Println(w.Signer)
 
-	dataItems := []data_item.DataItem{}
+	var dataItems []data_item.DataItem
 	for i := 0; i < 10; i++ {
 		d := w.CreateDataItem([]byte("test"), "", "", &[]tag.Tag{{Name: "test", Value: "test"}})
 		_, err = w.SignDataItem(d)

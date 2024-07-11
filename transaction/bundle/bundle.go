@@ -7,8 +7,8 @@ import (
 	"github.com/liteseed/goar/transaction/data_item"
 )
 
-// Create a data bundle from a group of data items
-// Learn more: // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
+// New Create a data bundle from a group of data items
+// Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func New(ds *[]data_item.DataItem) (*Bundle, error) {
 	b := &Bundle{}
 

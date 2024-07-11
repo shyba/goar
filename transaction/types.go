@@ -87,8 +87,8 @@ func (tx *Transaction) GetChunk(i int, data []byte) (*GetChunkResult, error) {
 	}, nil
 }
 
-// Note: we *do not* use `t.Data`, the caller may be
-// operating on a transaction with an zero length data field.
+// PrepareChunks Note: we *do not* use `t.Data`, the caller may be
+// operating on a transaction with a zero length data field.
 // This function computes the chunks for the data passed in and
 // assigns the result to this transaction. It should not read the
 // data *from* this transaction.

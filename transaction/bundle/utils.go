@@ -8,7 +8,7 @@ import (
 )
 
 func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
-	headers := []BundleHeader{}
+	var headers []BundleHeader
 
 	for _, dataItem := range *d {
 		idBytes, err := crypto.Base64URLDecode(dataItem.ID)
@@ -25,7 +25,7 @@ func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
 
 func decodeBundleHeader(data []byte) ([]BundleHeader, int) {
 	N := byteArrayToLong(data[:32])
-	headers := []BundleHeader{}
+	var headers []BundleHeader
 	for i := 32; i < 32+64*N; i += 64 {
 		log.Println(i, i+32, i+32, i+64)
 		log.Println(len(data[i:i+32]), len(data[i+32:i+64]))

@@ -84,7 +84,7 @@ func generateTransactionChunks(data []byte) (*ChunkData, error) {
 }
 
 func chunkData(data []byte) ([]Chunk, error) {
-	chunks := []Chunk{}
+	var chunks []Chunk
 
 	rest := data
 	cursor := 0
@@ -100,14 +100,11 @@ func chunkData(data []byte) ([]Chunk, error) {
 		}
 
 		chunk := rest[:chunkSize]
-		dataHash, err := crypto.SHA256(chunk)
-		if err != nil {
-			return nil, err
-		}
+		dataSha := crypto.SHA256(chunk)
 
 		cursor += len(chunk)
 		chunks = append(chunks, Chunk{
-			DataHash:     dataHash[:],
+			DataHash:     dataSha[:],
 			MinByteRange: cursor - len(chunk),
 			MaxByteRange: cursor,
 		})
@@ -115,10 +112,7 @@ func chunkData(data []byte) ([]Chunk, error) {
 		rest = rest[chunkSize:]
 	}
 
-	hash, err := crypto.SHA256(rest)
-	if err != nil {
-		return nil, err
-	}
+	hash := crypto.SHA256(rest)
 	chunks = append(chunks, Chunk{
 		DataHash:     hash[:],
 		MinByteRange: cursor,
@@ -128,23 +122,9 @@ func chunkData(data []byte) ([]Chunk, error) {
 }
 
 func generateLeaves(chunks []Chunk) ([]Node, error) {
-	leaves := []Node{}
+	var leaves []Node
 	for _, chunk := range chunks {
-
-		hashDataHash, err := crypto.SHA256(chunk.DataHash)
-		if err != nil {
-			return nil, err
-		}
-
-		hashRange, err := crypto.SHA256(intToByteArray(chunk.MaxByteRange))
-		if err != nil {
-			return nil, err
-		}
-
-		ID, err := crypto.SHA256(append(hashDataHash, hashRange...))
-		if err != nil {
-			return nil, err
-		}
+		ID := crypto.SHA256(append(crypto.SHA256(chunk.DataHash), crypto.SHA256(intToByteArray(chunk.MaxByteRange))...))
 		leaves = append(leaves, Node{
 			ID:           ID,
 			DataHash:     chunk.DataHash,
@@ -163,7 +143,7 @@ func buildLayer(nodes []Node, level int) (*Node, error) {
 		return &nodes[0], nil
 	}
 
-	nextLayer := []Node{}
+	var nextLayer []Node
 	for i := 0; i < len(nodes); i += 2 {
 		var next *Node
 		if i+1 < len(nodes) {
@@ -182,22 +162,14 @@ func hashBranch(left *Node, right *Node) (*Node, error) {
 	if right == nil {
 		return left, nil
 	}
-	leftIdHash, err := crypto.SHA256(left.ID)
-	if err != nil {
-		return nil, err
-	}
-	rightIdHash, err := crypto.SHA256(right.ID)
-	if err != nil {
-		return nil, err
-	}
-	leftMaxByteRangeHash, err := crypto.SHA256(intToByteArray(left.MaxByteRange))
-	if err != nil {
-		return nil, err
-	}
-	ID, err := crypto.SHA256(append(leftIdHash, append(rightIdHash, leftMaxByteRangeHash...)...))
-	if err != nil {
-		return nil, err
-	}
+	ID := crypto.SHA256(
+		append(crypto.SHA256(left.ID),
+			append(
+				crypto.SHA256(right.ID),
+				crypto.SHA256(intToByteArray(left.MaxByteRange))...,
+			)...,
+		),
+	)
 	return &Node{
 		ID:           ID,
 		ByteRange:    left.MaxByteRange,
@@ -209,16 +181,16 @@ func hashBranch(left *Node, right *Node) (*Node, error) {
 }
 
 func generateProofs(node *Node, proof []byte, depth int) []Proof {
-	proofs := []Proof{}
+	var proofs []Proof
 	if node.Type == Leaf {
-		p := []byte{}
+		var p []byte
 		p = append(p, proof...)
 		p = append(p, node.DataHash...)
 		p = append(p, intToByteArray(node.MaxByteRange)...)
 		proofs = append(proofs, Proof{Offset: node.MaxByteRange - 1, Proof: p})
 	}
 	if node.Type == Branch {
-		partialProof := []byte{}
+		var partialProof []byte
 		partialProof = append(partialProof, proof...)
 		partialProof = append(partialProof, node.LeftChild.ID...)
 		partialProof = append(partialProof, node.RightChild.ID...)
@@ -244,22 +216,7 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 	if len(path) == HASH_SIZE+NOTE_SIZE {
 		pathData := path[0:HASH_SIZE]
 		endOffsetBuffer := path[len(pathData) : len(pathData)+NOTE_SIZE]
-
-		pathDataHash, err := crypto.SHA256(pathData)
-		if err != nil {
-			return nil, err
-		}
-
-		endOffsetBufferHash, err := crypto.SHA256(endOffsetBuffer)
-		if err != nil {
-			return nil, err
-		}
-
-		h, err := crypto.SHA256(append(pathDataHash, endOffsetBufferHash...))
-		if err != nil {
-			return nil, err
-		}
-
+		h := crypto.SHA256(append(crypto.SHA256(pathData), crypto.SHA256(endOffsetBuffer)...))
 		if reflect.DeepEqual(id, h) {
 			return &ValidatePathResult{
 				Offset:     rightBound - 1,
@@ -274,33 +231,14 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 	right := path[len(left) : len(left)+HASH_SIZE]
 	offsetBuffer := path[len(left)+len(right) : len(left)+len(right)+NOTE_SIZE]
 	offset := byteArrayToInt(offsetBuffer)
-	log.Println(offsetBuffer)	
 	remainder := path[len(left)+len(right)+len(offsetBuffer):]
 
-	l, err := crypto.SHA256(left)
-	if err != nil {
-		return nil, err
-	}
-	r, err := crypto.SHA256(right)
-	if err != nil {
-		return nil, err
-	}
+	var p []byte
+	p = append(p, crypto.SHA256(left)...)
+	p = append(p, crypto.SHA256(right)...)
+	p = append(p, crypto.SHA256(offsetBuffer)...)
 
-	o, err := crypto.SHA256(offsetBuffer)
-	if err != nil {
-		return nil, err
-	}
-
-	p := []byte{}
-	p = append(p, l...)
-	p = append(p, r...)
-	p = append(p, o...)
-	pathHash, err := crypto.SHA256(p)
-	if err != nil {
-		return nil, err
-	}
-
-	if reflect.DeepEqual(id, pathHash) {
+	if reflect.DeepEqual(id, crypto.SHA256(p)) {
 		if dest < offset {
 			return validatePath(
 				left,
@@ -309,7 +247,7 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 				min(rightBound, offset),
 				remainder,
 			)
-		} 
+		}
 		return validatePath(
 			right,
 			dest,
@@ -322,7 +260,7 @@ func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byt
 }
 
 func flatten[T any](v []any) []T {
-	proofs := []T{}
+	var proofs []T
 	for _, val := range v {
 		if isSlice(val) {
 			proofs = append(proofs, flatten[T](val.([]any))...)

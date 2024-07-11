@@ -13,9 +13,8 @@ import (
 )
 
 const (
-	DEFAULT_CHUNK_CONCURRENT_NUM = 50
-	MAX_CHUNKS_IN_BODY           = 1
-	DELAY                        = 30000
+	MAX_CHUNKS_IN_BODY = 1
+	DELAY              = 30000
 )
 
 var FATAL_CHUNK_UPLOAD_ERRORS = []string{
@@ -73,7 +72,7 @@ func (tu *TransactionUploader) PostTransaction() error {
 	} else {
 		// Post transaction with no data
 		t := tu.transaction
-		t.Data = nil
+		t.Data = []byte{}
 		code, err := tu.client.SubmitTransaction(t)
 		if err != nil {
 			return err

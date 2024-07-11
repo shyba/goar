@@ -10,10 +10,7 @@ func GetAddressFromOwner(owner string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	address, err := GetAddressFromPublicKey(publicKey)
-	if err != nil {
-		return "", err
-	}
+	address := GetAddressFromPublicKey(publicKey)
 	return address, nil
 }
 
@@ -29,10 +26,6 @@ func GetPublicKeyFromOwner(owner string) (*rsa.PublicKey, error) {
 	}, nil
 }
 
-func GetAddressFromPublicKey(p *rsa.PublicKey) (string, error) {
-	address, err := SHA256(p.N.Bytes())
-	if err != nil {
-		return "", err
-	}
-	return Base64URLEncode(address), nil
+func GetAddressFromPublicKey(p *rsa.PublicKey) string {
+	return Base64URLEncode(SHA256(p.N.Bytes()))
 }
