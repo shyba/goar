@@ -56,15 +56,14 @@ func New(c *client.Client, t *transaction.Transaction) (*TransactionUploader, er
 }
 
 func (tu *TransactionUploader) PostTransaction() error {
-	uploadInBody := tu.TotalChunks <= MAX_CHUNKS_IN_BODY
-	if uploadInBody {
+	if tu.TotalChunks <= MAX_CHUNKS_IN_BODY {
 		code, err := tu.client.SubmitTransaction(tu.transaction)
 		if err != nil {
 			return err
 		}
 		tu.LastRequestTimeEnd = time.Now().UTC().UnixMilli()
 		tu.LastResponseStatus = code
-		if code >= 200 && code < 300 {
+		if code >= 200 && code < 400 {
 			tu.TxPosted = true
 			tu.ChunkIndex = MAX_CHUNKS_IN_BODY
 		}
@@ -72,7 +71,7 @@ func (tu *TransactionUploader) PostTransaction() error {
 	} else {
 		// Post transaction with no data
 		t := tu.transaction
-		t.Data = []byte{}
+		t.Data = ""
 		code, err := tu.client.SubmitTransaction(t)
 		if err != nil {
 			return err

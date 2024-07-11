@@ -20,7 +20,7 @@ func New(data []byte, target string, quantity string, tags *[]tag.Tag) *Transact
 	}
 	return &Transaction{
 		Format:   2,
-		Data:     data,
+		Data:     crypto.Base64URLEncode(data),
 		Target:   target,
 		Quantity: quantity,
 		Tags:     tag.Encode(tags),
@@ -81,7 +81,12 @@ func (tx *Transaction) getSignatureData() ([]byte, error) {
 		return nil, err
 	}
 
-	err = tx.PrepareChunks(tx.Data)
+	data, err := crypto.Base64URLDecode(tx.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.PrepareChunks(data)
 	if err != nil {
 		return nil, err
 	}

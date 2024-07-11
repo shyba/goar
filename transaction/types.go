@@ -44,7 +44,7 @@ type Transaction struct {
 	Tags      *[]tag.Tag `json:"tags"`
 	Target    string     `json:"target"`
 	Quantity  string     `json:"quantity"`
-	Data      []byte     `json:"data"`
+	Data      string     `json:"data"`
 	Reward    string     `json:"reward"`
 	Signature string     `json:"signature"`
 	DataSize  string     `json:"data_size"`

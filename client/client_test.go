@@ -68,7 +68,7 @@ func TestGetTransactionByID(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		f, err := c.GetTransactionByID("QWrt4e6nXe7zNcXJE0IADPZI7f9-O_enUk5g8FE_RpL")
 		assert.Nil(t, f)
-		assert.Error(t, errors.New("Not Found"), err)
+		assert.Error(t, errors.New("not found"), err)
 	})
 }
 

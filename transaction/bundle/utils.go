@@ -7,8 +7,8 @@ import (
 	"github.com/liteseed/goar/transaction/data_item"
 )
 
-func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
-	var headers []BundleHeader
+func generateBundleHeader(d *[]data_item.DataItem) (*[]Header, error) {
+	var headers []Header
 
 	for _, dataItem := range *d {
 		idBytes, err := crypto.Base64URLDecode(dataItem.ID)
@@ -18,20 +18,20 @@ func generateBundleHeader(d *[]data_item.DataItem) (*[]BundleHeader, error) {
 
 		size := len(dataItem.Raw)
 		raw := append(idBytes, longTo32ByteArray(size)...)
-		headers = append(headers, BundleHeader{ID: dataItem.ID, Size: size, Raw: raw})
+		headers = append(headers, Header{ID: dataItem.ID, Size: size, Raw: raw})
 	}
 	return &headers, nil
 }
 
-func decodeBundleHeader(data []byte) ([]BundleHeader, int) {
+func decodeBundleHeader(data []byte) ([]Header, int) {
 	N := byteArrayToLong(data[:32])
-	var headers []BundleHeader
+	var headers []Header
 	for i := 32; i < 32+64*N; i += 64 {
 		log.Println(i, i+32, i+32, i+64)
 		log.Println(len(data[i:i+32]), len(data[i+32:i+64]))
 		size := byteArrayToLong(data[i : i+32])
 		id := crypto.Base64URLEncode(data[i+32 : i+64])
-		headers = append(headers, BundleHeader{ID: id, Size: size, Raw: data[i : i+64]})
+		headers = append(headers, Header{ID: id, Size: size, Raw: data[i : i+64]})
 	}
 	return headers, N
 }

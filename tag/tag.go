@@ -75,7 +75,7 @@ func Serialize(tags *[]Tag) ([]byte, error) {
 	return nil, nil
 }
 
-// Converts avro-encoded byte data into readable Tag data
+// Deserialize Converts avro-encoded byte data into readable Tag data
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
 	tags := &[]Tag{}
