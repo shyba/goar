@@ -23,7 +23,7 @@ func New(data []byte, target string, quantity string, tags *[]tag.Tag) *Transact
 		Data:     crypto.Base64URLEncode(data),
 		Target:   target,
 		Quantity: quantity,
-		Tags:     tag.Encode(tags),
+		Tags:     tag.ConvertToBase64(tags),
 		DataSize: "0",
 	}
 }

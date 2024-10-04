@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 )
 
+// Verify to verify any data using the provided Arweave RSA Public Key
 func Verify(data []byte, signature []byte, publicKey *rsa.PublicKey) error {
 	hashed := sha256.Sum256(data)
 

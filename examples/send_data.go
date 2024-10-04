@@ -23,4 +23,3 @@ func SendData() {
 		log.Fatal(err)
 	}
 }
-

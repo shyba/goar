@@ -8,13 +8,13 @@ import (
 	"path"
 )
 
-func (c *Client) get(_path string) ([]byte, error) {
+func (c *Client) get(route string) ([]byte, error) {
 	u, err := url.Parse(c.Gateway)
 	if err != nil {
 		return nil, err
 	}
 
-	u.Path = path.Join(u.Path, _path)
+	u.Path = path.Join(u.Path, route)
 
 	resp, err := c.Client.Get(u.String())
 	if err != nil {
@@ -32,13 +32,13 @@ func (c *Client) get(_path string) ([]byte, error) {
 	return body, nil
 }
 
-func (c *Client) post(_path string, payload []byte) (int, error) {
+func (c *Client) post(route string, payload []byte) (int, error) {
 	u, err := url.Parse(c.Gateway)
 	if err != nil {
 		return -1, err
 	}
 
-	u.Path = path.Join(u.Path, _path)
+	u.Path = path.Join(u.Path, route)
 	resp, err := c.Client.Post(u.String(), "application/json", bytes.NewBuffer(payload))
 	if err != nil {
 		return -1, err

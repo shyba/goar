@@ -2,7 +2,6 @@ package transaction
 
 import (
 	"errors"
-	"log"
 	"math"
 	"reflect"
 
@@ -45,14 +44,8 @@ func generateTree(data []byte) (*Node, error) {
 	return rootNode, err
 }
 
-/**
- * Generates the data_root, chunks & proofs
- * needed for a transaction.
- *
- * This also checks if the last chunk is a zero-length
- * chunk and discards that chunk and proof if so.
- * (we do not need to upload this zero length chunk)
- */
+// generateTransactionChunks Generates the data_root, chunks & proofs needed for a transaction.
+// This also checks if the last chunk is a zero-length chunk and discards that chunk and proof (we do not need to upload this zero length chunk)
 func generateTransactionChunks(data []byte) (*ChunkData, error) {
 	chunks, err := chunkData(data)
 	if err != nil {
@@ -83,6 +76,7 @@ func generateTransactionChunks(data []byte) (*ChunkData, error) {
 
 }
 
+// chunkData generates [Chunk] from transaction data for uploading to Arweave
 func chunkData(data []byte) ([]Chunk, error) {
 	var chunks []Chunk
 
@@ -203,7 +197,6 @@ func generateProofs(node *Node, proof []byte, depth int) []Proof {
 }
 
 func validatePath(id []byte, dest int, leftBound int, rightBound int, path []byte) (*ValidatePathResult, error) {
-	log.Println(crypto.Base64URLEncode(id), dest, leftBound, rightBound, len(path))
 	if rightBound <= 0 {
 		return nil, errors.New("right bound < 0")
 	}

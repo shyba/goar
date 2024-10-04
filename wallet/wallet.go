@@ -18,6 +18,7 @@ type Wallet struct {
 	Signer *signer.Signer
 }
 
+// New create a [Wallet] with a new [Signer] and [Client] using the gateway url
 func New(gateway string) (w *Wallet, err error) {
 	s, err := signer.New()
 	if err != nil {
@@ -29,6 +30,7 @@ func New(gateway string) (w *Wallet, err error) {
 	}, nil
 }
 
+// FromPath create a [Wallet] with a [Signer] from the path and [Client] using the gateway url
 func FromPath(path string, gateway string) (*Wallet, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -38,6 +40,7 @@ func FromPath(path string, gateway string) (*Wallet, error) {
 	return FromJWK(b, gateway)
 }
 
+// FromJWK create a [Wallet] with a [signer.Signer] from the JWK and [client.Client] using the gateway url
 func FromJWK(jwk []byte, gateway string) (*Wallet, error) {
 	s, err := signer.FromJWK(jwk)
 	if err != nil {
@@ -49,10 +52,12 @@ func FromJWK(jwk []byte, gateway string) (*Wallet, error) {
 	}, nil
 }
 
+// CreateTransaction create a [transaction.Transaction]
 func (w *Wallet) CreateTransaction(data []byte, target string, quantity string, tags *[]tag.Tag) *transaction.Transaction {
 	return transaction.New(data, target, quantity, tags)
 }
 
+// SignTransaction sign a [transaction.Transaction]
 func (w *Wallet) SignTransaction(tx *transaction.Transaction) (*transaction.Transaction, error) {
 	tx.Owner = w.Signer.Owner()
 
@@ -74,6 +79,7 @@ func (w *Wallet) SignTransaction(tx *transaction.Transaction) (*transaction.Tran
 	return tx, nil
 }
 
+// SendTransaction send a [transaction.Transaction] to an Arweave Gateway
 func (w *Wallet) SendTransaction(tx *transaction.Transaction) error {
 	if tx.ID == "" || tx.Signature == "" {
 		return errors.New("transaction not signed")
@@ -88,6 +94,7 @@ func (w *Wallet) SendTransaction(tx *transaction.Transaction) error {
 	return nil
 }
 
+// CreateDataItem create a [data_item.DataItem] which is a special format for uploading data.
 func (w *Wallet) CreateDataItem(data []byte, target string, anchor string, tags *[]tag.Tag) *data_item.DataItem {
 	return data_item.New(data, target, anchor, tags)
 }
@@ -99,6 +106,7 @@ func (w *Wallet) SignDataItem(di *data_item.DataItem) (*data_item.DataItem, erro
 	return di, nil
 }
 
+// CreateBundle create a [bundle.Bundle] which is a sequence of [data_item.DataItem] defined in ANS-104
 func (w *Wallet) CreateBundle(dataItems *[]data_item.DataItem) (*bundle.Bundle, error) {
 	return bundle.New(dataItems)
 }

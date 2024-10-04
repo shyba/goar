@@ -22,6 +22,7 @@ const avroTagSchema = `
 	}
 }`
 
+// fromAvro encoded binary data convert to human-readable [Tag]
 func fromAvro(data []byte) (*[]Tag, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
@@ -42,6 +43,7 @@ func fromAvro(data []byte) (*[]Tag, error) {
 	return &tags, err
 }
 
+// toAvro convert from human-readable [Tag] to Avro encoded binary data
 func toAvro(tags *[]Tag) ([]byte, error) {
 	codec, err := goavro.NewCodec(avroTagSchema)
 	if err != nil {
@@ -61,7 +63,7 @@ func toAvro(tags *[]Tag) ([]byte, error) {
 	return data, err
 }
 
-// Serialize Converts readable Tag data into avro-encoded byte data
+// Serialize Converts readable Tag data into avro-encoded byte data for an Arweave transaction
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Serialize(tags *[]Tag) ([]byte, error) {
 	if len(*tags) > 0 {
@@ -75,7 +77,7 @@ func Serialize(tags *[]Tag) ([]byte, error) {
 	return nil, nil
 }
 
-// Deserialize Converts avro-encoded byte data into readable Tag data
+// Deserialize Convert avro-encoded byte data from an Arweave transaction into readable Tag data
 // Learn more: https://github.com/ArweaveTeam/arweave-standards/blob/master/ans/ANS-104.md
 func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
 	tags := &[]Tag{}
@@ -102,6 +104,7 @@ func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
 	return tags, tagsEnd, nil
 }
 
+// Decode convert [Tag] to bytes
 func Decode(tags *[]Tag) ([][][]byte, error) {
 	if len(*tags) == 0 {
 		return nil, nil
@@ -121,7 +124,8 @@ func Decode(tags *[]Tag) ([][][]byte, error) {
 	return data, nil
 }
 
-func Encode(tags *[]Tag) *[]Tag {
+// ConvertToBase64 encode all string values of [Tag] to Base64 string
+func ConvertToBase64(tags *[]Tag) *[]Tag {
 	var result []Tag
 	for _, tag := range *tags {
 		result = append(result, Tag{Name: crypto.Base64URLEncode([]byte(tag.Name)), Value: crypto.Base64URLEncode([]byte(tag.Value))})

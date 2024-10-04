@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 )
 
+// Sign to sign any data using your Arweave RSA Private Key
 func Sign(data []byte, privateKey *rsa.PrivateKey) ([]byte, error) {
 	hashed := sha256.Sum256(data)
 

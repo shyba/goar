@@ -6,7 +6,10 @@ import (
 	"reflect"
 )
 
-// DeepHash is used to hash raw transaction data for signing using the signer.
+// DeepHash is a hash algorithm which takes a nested list of values as input
+// and produces a 384 bit hash, where a change of any value or the structure
+// will affect the hash.
+// https://www.arweave.org/yellow-paper.pdf
 func DeepHash(data any) [48]byte {
 	if typeof(data) == "[]uint8" {
 		tag := append([]byte("blob"), []byte(fmt.Sprint(len(data.([]byte))))...)
@@ -21,6 +24,7 @@ func DeepHash(data any) [48]byte {
 		return deepHashChunk(d, sha512.Sum384(tag))
 	}
 }
+
 func deepHashChunk(data []any, acc [48]byte) [48]byte {
 	if len(data) < 1 {
 		return acc
@@ -34,6 +38,7 @@ func deepHashChunk(data []any, acc [48]byte) [48]byte {
 func typeof(v any) string {
 	return reflect.TypeOf(v).String()
 }
+
 func unpackArray(s any) []any {
 	v := reflect.ValueOf(s)
 	r := make([]any, v.Len())

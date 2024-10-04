@@ -17,6 +17,7 @@ type Signer struct {
 	PrivateKey *rsa.PrivateKey
 }
 
+// New create a new [Signer]
 func New() (*Signer, error) {
 	bitSize := 4096
 	key, err := rsa.GenerateKey(rand.Reader, bitSize)
@@ -34,6 +35,7 @@ func New() (*Signer, error) {
 	return FromJWK(data)
 }
 
+// FromPath read the key formatted in json and get a [Signer]
 func FromPath(path string) (*Signer, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -42,6 +44,7 @@ func FromPath(path string) (*Signer, error) {
 	return FromJWK(b)
 }
 
+// FromJWK get a [Signer]
 func FromJWK(b []byte) (*Signer, error) {
 	key, err := gojwk.Unmarshal(b)
 	if err != nil {
@@ -74,6 +77,7 @@ func FromJWK(b []byte) (*Signer, error) {
 	}, nil
 }
 
+// FromPrivateKey get a [Signer]
 func FromPrivateKey(privateKey *rsa.PrivateKey) *Signer {
 	p := &privateKey.PublicKey
 	address := crypto.GetAddressFromPublicKey(p)
@@ -84,10 +88,12 @@ func FromPrivateKey(privateKey *rsa.PrivateKey) *Signer {
 	}
 }
 
+// Owner of the current private key
 func (s *Signer) Owner() string {
 	return crypto.Base64URLEncode(s.PublicKey.N.Bytes())
 }
 
+// Generate a new Arweave RSA private key
 func Generate() ([]byte, error) {
 	bitSize := 4096
 	key, err := rsa.GenerateKey(rand.Reader, bitSize)

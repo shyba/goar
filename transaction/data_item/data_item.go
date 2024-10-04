@@ -29,7 +29,7 @@ func New(rawData []byte, target string, anchor string, tags *[]tag.Tag) *DataIte
 	}
 }
 
-// Decode a DataItem from bytes
+// Decode a [DataItem] from bytes
 func Decode(raw []byte) (*DataItem, error) {
 	N := len(raw)
 	if N < 2 {
