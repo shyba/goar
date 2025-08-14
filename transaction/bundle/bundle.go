@@ -35,7 +35,12 @@ func New(ds *[]data_item.DataItem) (*Bundle, error) {
 		headersBytes = append(headersBytes, idBytes...)
 
 		d := (*ds)[i]
-		dataItemsBytes = append(dataItemsBytes, d.Raw...)
+		// Get complete raw data including payload for streaming data items
+		rawData, err := d.GetRawWithData()
+		if err != nil {
+			return nil, err
+		}
+		dataItemsBytes = append(dataItemsBytes, rawData...)
 	}
 
 	raw := make([]byte, 0)

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/liteseed/goar/crypto"
 	"github.com/liteseed/goar/tag"
@@ -74,7 +75,7 @@ func getSignatureMetadata(data []byte) (SignatureType int, SignatureLength int, 
 	return
 }
 
-// This function assembles DataItem data in a format specified by ANS-104 and hashes is it using DeepHash
+// This function assembles DataItem data in a format specified by ANS-104 and hashes it using DeepHash
 func (d *DataItem) getDataItemChunk() ([]byte, error) {
 	rawOwner, err := crypto.Base64URLDecode(d.Owner)
 	if err != nil {
@@ -91,9 +92,21 @@ func (d *DataItem) getDataItemChunk() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawData, err := crypto.Base64URLDecode(d.Data)
-	if err != nil {
-		return nil, err
+
+	// Use streaming approach for large data
+	if d.DataReader != nil && d.DataSize > 0 {
+		return d.getDataItemChunkStreaming(rawOwner, rawTarget, rawAnchor, rawTags)
+	}
+
+	// Handle in-memory data
+	var rawData []byte
+	if d.Data != "" {
+		rawData, err = crypto.Base64URLDecode(d.Data)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rawData = []byte{}
 	}
 
 	chunks := [][]byte{
@@ -107,5 +120,40 @@ func (d *DataItem) getDataItemChunk() ([]byte, error) {
 		rawData,
 	}
 	deepHashChunk := crypto.DeepHash(chunks)
+	return deepHashChunk[:], nil
+}
+
+// getDataItemChunkStreaming computes the DataItem hash using streaming for large data
+func (d *DataItem) getDataItemChunkStreaming(rawOwner, rawTarget, rawAnchor, rawTags []byte) ([]byte, error) {
+	// Prepare the chunks that come before the data
+	chunks := [][]byte{
+		[]byte("dataitem"),
+		[]byte("1"),
+		[]byte("1"),
+		rawOwner,
+		rawTarget,
+		rawAnchor,
+		rawTags,
+	}
+
+	// Get a reader for the data
+	reader, err := d.getDataReader()
+	if err != nil {
+		return nil, err
+	}
+	// Note: We don't close the reader - it's the caller's responsibility
+
+	// Seek to beginning to ensure we read from start
+	_, err = reader.Seek(0, io.SeekStart)
+	if err != nil {
+		return nil, fmt.Errorf("failed to seek to beginning: %v", err)
+	}
+
+	// Use streaming DeepHash for the mixed case
+	deepHashChunk, err := crypto.DeepHashMixed(chunks, reader, d.DataSize)
+	if err != nil {
+		return nil, err
+	}
+
 	return deepHashChunk[:], nil
 }

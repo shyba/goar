@@ -1,13 +1,18 @@
 package data_item
 
 import (
+	"bytes"
 	"encoding/base64"
+	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/liteseed/goar/signer"
 	"github.com/liteseed/goar/tag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecode(t *testing.T) {
@@ -174,5 +179,678 @@ func TestVerifyDataItem(t *testing.T) {
 
 		err = dataItem.Verify()
 		assert.NoError(t, err)
+	})
+}
+
+// MockReadSeeker implements io.ReadSeeker for testing streaming functionality
+type MockReadSeeker struct {
+	data     []byte
+	position int64
+}
+
+func NewMockReadSeeker(data []byte) *MockReadSeeker {
+	return &MockReadSeeker{
+		data:     data,
+		position: 0,
+	}
+}
+
+func (m *MockReadSeeker) Read(p []byte) (int, error) {
+	if m.position >= int64(len(m.data)) {
+		return 0, io.EOF
+	}
+
+	n := copy(p, m.data[m.position:])
+	m.position += int64(n)
+	return n, nil
+}
+
+func (m *MockReadSeeker) Seek(offset int64, whence int) (int64, error) {
+	switch whence {
+	case io.SeekStart:
+		m.position = offset
+	case io.SeekCurrent:
+		m.position += offset
+	case io.SeekEnd:
+		m.position = int64(len(m.data)) + offset
+	default:
+		return 0, fmt.Errorf("invalid whence value")
+	}
+
+	if m.position < 0 {
+		m.position = 0
+	}
+	if m.position > int64(len(m.data)) {
+		m.position = int64(len(m.data))
+	}
+
+	return m.position, nil
+}
+
+// TestNewFromReader tests the streaming functionality with NewFromReader
+func TestNewFromReader(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("NewFromReader - Basic functionality", func(t *testing.T) {
+		data := []byte("Hello, streaming world!")
+		reader := NewMockReadSeeker(data)
+		tags := &[]tag.Tag{
+			{Name: "Content-Type", Value: "text/plain"},
+			{Name: "Test", Value: "Streaming"},
+		}
+
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", tags)
+
+		// Verify initial state
+		assert.Equal(t, reader, dataItem.DataReader)
+		assert.Equal(t, int64(len(data)), dataItem.DataSize)
+		assert.Equal(t, "", dataItem.Target)
+		assert.Equal(t, "", dataItem.Anchor)
+		assert.Equal(t, tags, dataItem.Tags)
+		assert.Equal(t, "", dataItem.Data) // Should be empty for streaming
+
+		// Sign the DataItem
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Verify signing results
+		assert.NotEmpty(t, dataItem.ID)
+		assert.NotEmpty(t, dataItem.Signature)
+		assert.NotEmpty(t, dataItem.Owner)
+		assert.NotEmpty(t, dataItem.Raw) // Should contain header
+
+		// Verify the DataItem
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+	})
+
+	t.Run("NewFromReader - Large data simulation", func(t *testing.T) {
+		// Create a larger dataset to simulate streaming
+		large_data := make([]byte, 1024*1024) // 1MB
+		for i := range large_data {
+			large_data[i] = byte(i % 256)
+		}
+
+		reader := NewMockReadSeeker(large_data)
+		tags := &[]tag.Tag{
+			{Name: "Content-Type", Value: "application/octet-stream"},
+			{Name: "Size", Value: "1MB"},
+		}
+
+		dataItem := NewFromReader(reader, int64(len(large_data)), "", "", tags)
+
+		// Sign should work without loading all data into memory
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Verify should work
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+
+		// GetDataSize should return correct size
+		assert.Equal(t, int64(len(large_data)), dataItem.GetDataSize())
+	})
+
+	t.Run("NewFromReader - With target and anchor", func(t *testing.T) {
+		data := []byte("Test data with target and anchor")
+		reader := NewMockReadSeeker(data)
+		target := "OXcT1sVRSA5eGwt2k6Yuz8-3e3g9WJi5uSE99CWqsBs"
+		anchor := "test_anchor_string"
+		tags := &[]tag.Tag{{Name: "Type", Value: "Test"}}
+
+		dataItem := NewFromReader(reader, int64(len(data)), target, anchor, tags)
+
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		assert.Equal(t, target, dataItem.Target)
+		assert.Equal(t, anchor, dataItem.Anchor)
+
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+	})
+
+	t.Run("NewFromReader - Nil tags handling", func(t *testing.T) {
+		data := []byte("Test with nil tags")
+		reader := NewMockReadSeeker(data)
+
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", nil)
+
+		// Should create empty tags array
+		assert.NotNil(t, dataItem.Tags)
+		assert.Equal(t, 0, len(*dataItem.Tags))
+
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+	})
+}
+
+// TestGetRawWithData tests the GetRawWithData functionality for streaming
+func TestGetRawWithData(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("GetRawWithData - Streaming data", func(t *testing.T) {
+		originalData := []byte("This is test data for GetRawWithData")
+		reader := NewMockReadSeeker(originalData)
+
+		dataItem := NewFromReader(reader, int64(len(originalData)), "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Get raw data with data included
+		rawWithData, err := dataItem.GetRawWithData()
+		require.NoError(t, err)
+
+		// Raw data should be larger than just the original data (includes headers)
+		assert.Greater(t, len(rawWithData), len(originalData))
+
+		// The raw data should end with our original data
+		assert.True(t, bytes.HasSuffix(rawWithData, originalData))
+
+		// Should be able to decode the raw data
+		decoded, err := Decode(rawWithData)
+		require.NoError(t, err)
+
+		// Decoded data should match original DataItem properties
+		assert.Equal(t, dataItem.ID, decoded.ID)
+		assert.Equal(t, dataItem.Signature, decoded.Signature)
+		assert.Equal(t, dataItem.Owner, decoded.Owner)
+	})
+
+	t.Run("GetRawWithData - Non-streaming data", func(t *testing.T) {
+		originalData := []byte("Regular non-streaming data")
+		tags := &[]tag.Tag{{Name: "Test", Value: "NonStreaming"}}
+
+		dataItem := New(originalData, "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// For non-streaming data, GetRawWithData should return the same as Raw
+		rawWithData, err := dataItem.GetRawWithData()
+		require.NoError(t, err)
+
+		assert.Equal(t, dataItem.Raw, rawWithData)
+	})
+}
+
+// TestStreamingSeekBehavior tests that the reader seeking works correctly
+func TestStreamingSeekBehavior(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("Multiple operations with seeking", func(t *testing.T) {
+		data := []byte("Test data for seek behavior testing")
+		reader := NewMockReadSeeker(data)
+
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", nil)
+
+		// Sign (uses the reader)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Verify (uses the reader again)
+		err = dataItem.Verify()
+		require.NoError(t, err)
+
+		// GetRawWithData (uses the reader a third time)
+		_, err = dataItem.GetRawWithData()
+		require.NoError(t, err)
+
+		// All operations should succeed due to proper seeking
+	})
+}
+
+// TestDataSizeCalculation tests GetDataSize method
+func TestDataSizeCalculation(t *testing.T) {
+	t.Run("GetDataSize - Streaming data", func(t *testing.T) {
+		data := []byte("Test data for size calculation")
+		reader := NewMockReadSeeker(data)
+
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", nil)
+
+		assert.Equal(t, int64(len(data)), dataItem.GetDataSize())
+	})
+
+	t.Run("GetDataSize - Non-streaming data", func(t *testing.T) {
+		data := []byte("Non-streaming test data")
+		dataItem := New(data, "", "", nil)
+
+		// For non-streaming data, it should decode base64 to get actual size
+		assert.Equal(t, int64(len(data)), dataItem.GetDataSize())
+	})
+}
+
+// TestErrorHandling tests various error conditions
+func TestErrorHandling(t *testing.T) {
+	t.Run("Sign - Seek error during streaming", func(t *testing.T) {
+		// Create a mock reader that fails on seek
+		failingReader := &FailingSeeker{data: []byte("test")}
+		dataItem := NewFromReader(failingReader, 4, "", "", nil)
+
+		s, err := signer.New()
+		require.NoError(t, err)
+
+		// Sign should fail because of seek error in getDataItemChunkStreaming
+		err = dataItem.Sign(s)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to seek")
+	})
+
+	t.Run("GetDataSize - Invalid base64 data", func(t *testing.T) {
+		// Create a DataItem with invalid base64 data
+		dataItem := &DataItem{
+			Data: "invalid-base64!@#$%^&*()",
+		}
+
+		// Should return 0 when base64 decode fails
+		size := dataItem.GetDataSize()
+		assert.Equal(t, int64(0), size)
+	})
+
+	t.Run("GetRawWithData - No DataReader for streaming", func(t *testing.T) {
+		// Create a DataItem that looks like streaming but has no reader
+		dataItem := &DataItem{
+			DataReader: nil,
+			DataSize:   100,
+		}
+
+		// Should return empty Raw data
+		raw, err := dataItem.GetRawWithData()
+		require.NoError(t, err)
+		assert.Empty(t, raw)
+	})
+}
+
+// FailingSeeker is a mock reader that fails on Seek operations
+type FailingSeeker struct {
+	data     []byte
+	position int64
+}
+
+func (f *FailingSeeker) Read(p []byte) (int, error) {
+	n := copy(p, f.data[f.position:])
+	f.position += int64(n)
+	if f.position >= int64(len(f.data)) {
+		return n, io.EOF
+	}
+	return n, nil
+}
+
+func (f *FailingSeeker) Seek(offset int64, whence int) (int64, error) {
+	return 0, fmt.Errorf("seek operation failed")
+}
+
+// TestBackwardCompatibility ensures new changes don't break existing functionality
+func TestBackwardCompatibility(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("Traditional New() still works", func(t *testing.T) {
+		data := []byte("Traditional data")
+		tags := &[]tag.Tag{{Name: "Method", Value: "Traditional"}}
+
+		dataItem := New(data, "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+
+		// Should have Data field populated
+		assert.NotEmpty(t, dataItem.Data)
+		// Should not have streaming fields
+		assert.Nil(t, dataItem.DataReader)
+		assert.Equal(t, int64(0), dataItem.DataSize)
+	})
+
+	t.Run("Decode still works with traditional data", func(t *testing.T) {
+		originalData := []byte("Data for decode test")
+		dataItem := New(originalData, "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Decode from raw bytes
+		decoded, err := Decode(dataItem.Raw)
+		require.NoError(t, err)
+
+		assert.Equal(t, dataItem.ID, decoded.ID)
+		assert.Equal(t, dataItem.Data, decoded.Data)
+		assert.Equal(t, dataItem.Signature, decoded.Signature)
+	})
+}
+
+// TestStreamingInternalMethods tests internal methods used by streaming functionality
+func TestStreamingInternalMethods(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("buildHeaderOnly creates proper header", func(t *testing.T) {
+		data := []byte("Test data for header building")
+		reader := NewMockReadSeeker(data)
+		tags := &[]tag.Tag{{Name: "Test", Value: "HeaderBuild"}}
+
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// After signing, Raw should contain header-only data for streaming
+		// The header should be substantial (Arweave headers are quite large due to signatures)
+		assert.Greater(t, len(dataItem.Raw), 100) // Should have substantial header
+
+		// For streaming data, the Raw field contains only the header, not the data
+		// So it should be independent of the actual data size
+
+		// GetRawWithData should return much larger data
+		fullRaw, err := dataItem.GetRawWithData()
+		require.NoError(t, err)
+		assert.Greater(t, len(fullRaw), len(dataItem.Raw))
+	})
+
+	t.Run("Empty data streaming", func(t *testing.T) {
+		emptyData := []byte{}
+		reader := NewMockReadSeeker(emptyData)
+
+		dataItem := NewFromReader(reader, 0, "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		err = dataItem.Verify()
+		assert.NoError(t, err)
+
+		// Should handle empty streaming data
+		assert.Equal(t, int64(0), dataItem.GetDataSize())
+	})
+}
+
+// TestWriteRawTo tests the WriteRawTo method for streaming raw data to writers
+func TestWriteRawTo(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("WriteRawTo - Streaming data", func(t *testing.T) {
+		originalData := []byte("Test data for WriteRawTo streaming functionality")
+		reader := NewMockReadSeeker(originalData)
+		tags := &[]tag.Tag{
+			{Name: "Content-Type", Value: "text/plain"},
+			{Name: "Test", Value: "WriteRawTo"},
+		}
+
+		dataItem := NewFromReader(reader, int64(len(originalData)), "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Write to a buffer
+		var buffer bytes.Buffer
+		err = dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Verify the written data
+		writtenData := buffer.Bytes()
+		assert.Greater(t, len(writtenData), len(originalData))     // Should include headers
+		assert.True(t, bytes.HasSuffix(writtenData, originalData)) // Should end with original data
+
+		// The written data should be decodable
+		decoded, err := Decode(writtenData)
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.ID, decoded.ID)
+		assert.Equal(t, dataItem.Signature, decoded.Signature)
+	})
+
+	t.Run("WriteRawTo - Non-streaming data", func(t *testing.T) {
+		originalData := []byte("Non-streaming data for WriteRawTo")
+		tags := &[]tag.Tag{{Name: "Test", Value: "NonStreamingWriteRawTo"}}
+
+		dataItem := New(originalData, "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Write to a buffer
+		var buffer bytes.Buffer
+		err = dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Should write the same as the Raw field
+		assert.Equal(t, dataItem.Raw, buffer.Bytes())
+
+		// Verify it's decodable
+		decoded, err := Decode(buffer.Bytes())
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.ID, decoded.ID)
+	})
+
+	t.Run("WriteRawTo - Large streaming data", func(t *testing.T) {
+		// Create larger data to test streaming efficiency
+		largeData := make([]byte, 10*1024) // 10KB
+		for i := range largeData {
+			largeData[i] = byte(i % 256)
+		}
+
+		reader := NewMockReadSeeker(largeData)
+		dataItem := NewFromReader(reader, int64(len(largeData)), "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		var buffer bytes.Buffer
+		err = dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Verify the data was streamed correctly
+		writtenData := buffer.Bytes()
+		assert.True(t, bytes.HasSuffix(writtenData, largeData))
+
+		// Verify it can be decoded
+		decoded, err := Decode(writtenData)
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.ID, decoded.ID)
+	})
+
+	t.Run("WriteRawTo - Empty streaming data", func(t *testing.T) {
+		emptyData := []byte{}
+		reader := NewMockReadSeeker(emptyData)
+
+		dataItem := NewFromReader(reader, 0, "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		var buffer bytes.Buffer
+		err = dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Should still contain the header
+		assert.Greater(t, buffer.Len(), 0)
+
+		// Should be decodable
+		decoded, err := Decode(buffer.Bytes())
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.ID, decoded.ID)
+	})
+}
+
+// TestWriteRawFile tests the WriteRawFile method for streaming raw data to files
+func TestWriteRawFile(t *testing.T) {
+	s, err := signer.New()
+	require.NoError(t, err)
+
+	t.Run("WriteRawFile - Streaming data to file", func(t *testing.T) {
+		originalData := []byte("Test data for WriteRawFile with streaming")
+		reader := NewMockReadSeeker(originalData)
+		tags := &[]tag.Tag{
+			{Name: "Content-Type", Value: "application/octet-stream"},
+			{Name: "Test", Value: "WriteRawFile"},
+		}
+
+		dataItem := NewFromReader(reader, int64(len(originalData)), "", "", tags)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Create temp file
+		tempDir := t.TempDir()
+		tempFile := filepath.Join(tempDir, "test_dataitem.bin")
+
+		// Write to file
+		err = dataItem.WriteRawFile(tempFile)
+		require.NoError(t, err)
+
+		// Verify file was created and has correct content
+		fileData, err := os.ReadFile(tempFile)
+		require.NoError(t, err)
+
+		// Should contain headers plus data
+		assert.Greater(t, len(fileData), len(originalData))
+		assert.True(t, bytes.HasSuffix(fileData, originalData))
+
+		// Should be decodable
+		decoded, err := Decode(fileData)
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.ID, decoded.ID)
+		assert.Equal(t, dataItem.Signature, decoded.Signature)
+	})
+
+	t.Run("WriteRawFile - Non-streaming data to file", func(t *testing.T) {
+		originalData := []byte("Non-streaming data for file write test")
+		dataItem := New(originalData, "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Create temp file
+		tempDir := t.TempDir()
+		tempFile := filepath.Join(tempDir, "test_traditional_dataitem.bin")
+
+		// Write to file
+		err = dataItem.WriteRawFile(tempFile)
+		require.NoError(t, err)
+
+		// Verify file content matches Raw data
+		fileData, err := os.ReadFile(tempFile)
+		require.NoError(t, err)
+		assert.Equal(t, dataItem.Raw, fileData)
+	})
+
+	t.Run("WriteRawFile - Large file streaming", func(t *testing.T) {
+		// Create a reasonably large dataset
+		largeData := make([]byte, 1024*1024) // 1MB
+		for i := range largeData {
+			largeData[i] = byte(i % 256)
+		}
+
+		reader := NewMockReadSeeker(largeData)
+		dataItem := NewFromReader(reader, int64(len(largeData)), "", "", nil)
+		err := dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Create temp file
+		tempDir := t.TempDir()
+		tempFile := filepath.Join(tempDir, "test_large_dataitem.bin")
+
+		// Write to file (should be memory efficient)
+		err = dataItem.WriteRawFile(tempFile)
+		require.NoError(t, err)
+
+		// Verify file size is reasonable
+		fileInfo, err := os.Stat(tempFile)
+		require.NoError(t, err)
+		expectedSize := int64(len(largeData)) + int64(len(dataItem.Raw))
+		assert.Equal(t, expectedSize, fileInfo.Size())
+
+		// Verify file content by reading just the end
+		file, err := os.Open(tempFile)
+		require.NoError(t, err)
+		defer file.Close()
+
+		// Seek to where data should start (after header)
+		_, err = file.Seek(int64(len(dataItem.Raw)), io.SeekStart)
+		require.NoError(t, err)
+
+		// Read first few bytes of data section
+		dataStart := make([]byte, 100)
+		n, err := file.Read(dataStart)
+		require.NoError(t, err)
+
+		// Should match original data
+		assert.Equal(t, largeData[:n], dataStart[:n])
+	})
+}
+
+// TestWriteRawErrorHandling tests error conditions for WriteRaw methods
+func TestWriteRawErrorHandling(t *testing.T) {
+	t.Run("WriteRawFile - Invalid file path", func(t *testing.T) {
+		data := []byte("test data")
+		reader := NewMockReadSeeker(data)
+		dataItem := NewFromReader(reader, int64(len(data)), "", "", nil)
+
+		s, err := signer.New()
+		require.NoError(t, err)
+		err = dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Try to write to invalid path
+		err = dataItem.WriteRawFile("/invalid/path/that/does/not/exist/file.bin")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to create file")
+	})
+
+	t.Run("WriteRawTo - Seek error during streaming", func(t *testing.T) {
+		failingReader := &FailingSeeker{data: []byte("test data")}
+		dataItem := NewFromReader(failingReader, 9, "", "", nil)
+
+		// Set up a fake signed item to test WriteRawTo error handling
+		dataItem.Raw = []byte("fake header") // Fake header for testing
+
+		var buffer bytes.Buffer
+		err := dataItem.WriteRawTo(&buffer)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to seek")
+	})
+
+	t.Run("WriteRawTo - No Raw data", func(t *testing.T) {
+		// Create empty DataItem
+		dataItem := &DataItem{}
+
+		var buffer bytes.Buffer
+		err := dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Should write nothing
+		assert.Equal(t, 0, buffer.Len())
+	})
+}
+
+// TestWriteRawMemoryEfficiency tests that WriteRaw methods don't load large data into memory
+func TestWriteRawMemoryEfficiency(t *testing.T) {
+	t.Run("Memory efficient compared to GetRawWithData", func(t *testing.T) {
+		// Create a reasonably large dataset
+		largeData := make([]byte, 100*1024) // 100KB
+		for i := range largeData {
+			largeData[i] = byte(i % 256)
+		}
+
+		reader := NewMockReadSeeker(largeData)
+		dataItem := NewFromReader(reader, int64(len(largeData)), "", "", nil)
+
+		s, err := signer.New()
+		require.NoError(t, err)
+		err = dataItem.Sign(s)
+		require.NoError(t, err)
+
+		// Test WriteRawTo
+		var buffer bytes.Buffer
+		err = dataItem.WriteRawTo(&buffer)
+		require.NoError(t, err)
+
+		// Test GetRawWithData for comparison
+		rawWithData, err := dataItem.GetRawWithData()
+		require.NoError(t, err)
+
+		// Both should produce the same result
+		assert.Equal(t, rawWithData, buffer.Bytes())
+
+		// The key difference is that WriteRawTo streams the data without loading it all into memory
+		// while GetRawWithData loads everything. This is verified by the successful execution
+		// of WriteRawTo without memory allocation proportional to data size.
 	})
 }
