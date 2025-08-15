@@ -63,8 +63,9 @@ func Decode(raw []byte) (*DataItem, error) {
 	signatureStart := 2
 	signatureEnd := signatureLength + signatureStart
 
-	signature := crypto.Base64URLEncode(raw[signatureStart:signatureEnd])
-	rawId := crypto.SHA256(raw[signatureStart:signatureEnd])
+	rawSig := raw[signatureStart:signatureEnd]
+	signature := crypto.Base64URLEncode(rawSig)
+	rawId := crypto.SHA256(rawSig)
 	id := crypto.Base64URLEncode(rawId)
 	ownerStart := signatureEnd
 	ownerEnd := ownerStart + publicKeyLength

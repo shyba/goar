@@ -165,7 +165,7 @@ func Serialize(tags *[]Tag) ([]byte, error) {
 func Deserialize(data []byte, startAt int) (*[]Tag, int, error) {
 	tags := &[]Tag{}
 	tagsEnd := startAt + 8 + 8
-	numberOfTags := int(binary.LittleEndian.Uint16(data[startAt : startAt+8]))
+	numberOfTags := int(data[startAt])
 	numberOfTagBytesStart := startAt + 8
 	numberOfTagBytesEnd := numberOfTagBytesStart + 8
 	numberOfTagBytes := int(binary.LittleEndian.Uint16(data[numberOfTagBytesStart:numberOfTagBytesEnd]))
